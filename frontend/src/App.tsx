@@ -1,7 +1,10 @@
+import { useState } from 'react';
 import LoginPage from './pages/LoginPage'
 import './App.css'
+import CreateAccount from './pages/CreateAccount';
 
 function App() {
+  const [showCreate, setShowCreate] = useState<boolean>(false);
   /*
   This is example code for use in later features
 
@@ -44,10 +47,25 @@ function App() {
     }
   }
   */
+  const handleClick = () => {
+    setShowCreate(!showCreate);
+  }
+
   return (
-    <>
-      <LoginPage />
-    </>
+    <div className="gap-4">
+      {!showCreate ? (
+        <>
+          <LoginPage />
+          <button className="w-80" onClick={handleClick}>Create Account</button>
+        </>
+       ) : (
+        <>
+          <CreateAccount />
+          <button className="w-80" onClick={handleClick}>Log In</button>
+        </>
+       )
+      }
+    </div>
   )
 }
 
