@@ -39,6 +39,15 @@ function App() {
     content: content,
   }
 
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    switch(e.target.name) {
+      case 'sender':  setSender(e.target.value); break;
+      case 'recipient':  setRecipient(e.target.value); break;
+      case 'content':  setContent(e.target.value); break;
+      default:  return "Incorrect value"
+    }
+  }
   return (
     <>
       <div>
@@ -59,6 +68,9 @@ function App() {
           Edit <code>src/App.tsx</code> and save to test HMR
         </p>
       </div>
+      <input name="sender" className="border" type="text" value={sender} onChange={handleChange} />
+      <input name="recipient" className="border" type="text" value={recipient} onChange={handleChange}/>
+      <input name="content" className="border" type="textarea" value={content} onChange={handleChange}/>
       <p className="read-the-docs">
         Click on the Vite and React logos to learn more
       </p>

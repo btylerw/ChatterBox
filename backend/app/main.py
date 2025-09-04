@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.api import chat
+from app.api import auth
 
 app = FastAPI(
     title="ChatterBox API",
@@ -27,5 +28,5 @@ app.add_middleware(
 def root():
     return { "message" : "Welcome to Chatterbox API" }
 
-#app.include_router(auth.router, prefix="/auth", tags=["Authentication"])
+app.include_router(auth.router)
 app.include_router(chat.router, prefix="/chat", tags=["Chat"])
