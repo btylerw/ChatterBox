@@ -64,7 +64,7 @@ export default function CreateAccount() {
                 <input 
                     type="text"
                     name="username"
-                    className="p-2 border"
+                    className="p-2 border rounded-md"
                     value={formData.username}
                     onChange={handleChange}
                     placeholder="Enter Username"
@@ -72,7 +72,7 @@ export default function CreateAccount() {
                 <input
                     type="email"
                     name="email"
-                    className="p-2 border"
+                    className="p-2 border rounded-md"
                     value={formData.email}
                     onChange={handleChange}
                     placeholder="Enter Email"
@@ -80,7 +80,7 @@ export default function CreateAccount() {
                 <input
                     type="password"
                     name="password"
-                    className="p-2 border"
+                    className="p-2 border rounded-md"
                     value={formData.password}
                     onChange={handleChange}
                     placeholder="Enter Password"
@@ -88,7 +88,7 @@ export default function CreateAccount() {
                 <input 
                     type="password" 
                     name="confirmPassword"
-                    className="p-2 border"
+                    className="p-2 border rounded-md"
                     value={confirmPassword}
                     onChange={handleConfirmChange}
                     placeholder="Confirm Password"

@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import axios from "axios";
 
 export default function LoginPage() {
@@ -9,6 +10,7 @@ export default function LoginPage() {
         username: "",
         password: "",
     });
+    const navigate = useNavigate();
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { name, value } = e.target;
@@ -34,6 +36,7 @@ export default function LoginPage() {
                 setError("");
             }
             console.log(response.data);
+            navigate("/home");
         } catch (err: unknown) {
             if (axios.isAxiosError(err)) {
                 setError(err.response?.data?.detail ?? "Unknown Axios Error");
@@ -50,7 +53,7 @@ export default function LoginPage() {
                 <input 
                     type="text"
                     name="username"
-                    className="p-2 border"
+                    className="p-2 border rounded-md"
                     value={formData.username}
                     onChange={handleChange}
                     placeholder="Enter Username"
@@ -58,7 +61,7 @@ export default function LoginPage() {
                 <input 
                     type="password"
                     name="password"
-                    className="p-2 border" 
+                    className="p-2 border rounded-md" 
                     value={formData.password}
                     onChange={handleChange}
                     placeholder="Enter Password"
