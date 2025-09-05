@@ -1,23 +1,75 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useUser } from "../contexts/UserContext";
 import { useNavigate } from "react-router-dom";
 
 export default function HomePage() {
+
+    interface MessagePayload {
+        id: number,
+        username: string,
+        content: string,
+    }
+
+    interface ChatMessage {
+        id: number;
+        user: string;
+        content: string;
+    }
+
     const { user, logout } = useUser();
-    const [messages, setMessages] = useState([
-        { id: 1, user: user?.username, text: "Hey there 👋" },
-        { id: 2, user: "Bot", text: "Welcome to the chat!" },
-    ]);
-    const [input, setInput] = useState("");
+    const [messages, setMessages] = useState<ChatMessage[]>([]);
     const [showChannels, setShowChannels] = useState(false);
     const navigate = useNavigate();
+    const webSocketRef = useRef<WebSocket | null>(null);
+    const [messageToSend, setMessageToSend] = useState<string>("");
 
-    const sendMessage = (e: React.FormEvent) => {
+    useEffect(() => {
+        if (webSocketRef.current) return;
+
+        webSocketRef.current = new WebSocket("ws://localhost:8000/chat/ws-broadcast");
+        webSocketRef.current.onopen = () => {
+            console.log("WebSocket connection opened!");
+        }
+
+        webSocketRef.current.onmessage = (e) => {
+            const parsed: MessagePayload = JSON.parse(e.data);
+            const { username, content } = parsed;
+            setMessages((prevMessages) => [
+                ...prevMessages,
+                { id: Date.now(), user: username, content: content },
+            ]);
+        };
+
+        webSocketRef.current.onclose = () => {
+            console.log("WebSocket connection closed");
+        }
+
+        webSocketRef.current.onerror = (err) => {
+            console.error("Websocket error:", err);
+        }
+
+        return () => {
+            if (webSocketRef.current && webSocketRef.current.readyState === WebSocket.OPEN) {
+                webSocketRef.current.close();
+            }
+        };
+    }, []);
+
+    const sendWebMessage = (e: React.FormEvent) => {
         e.preventDefault();
-        if (!input.trim()) return;
-        setMessages([...messages, { id: Date.now(), user: "You", text: input }]);
-        setInput("");
-    };
+        console.log(messageToSend);
+        const data: MessagePayload = {
+            id: user?.id ?? 0,
+            username: user?.username ?? "Anonymous",
+            content: messageToSend,
+        }
+        if (webSocketRef.current && webSocketRef.current.readyState === WebSocket.OPEN) {
+            webSocketRef.current.send(JSON.stringify(data));
+            setMessageToSend('');
+        } else {
+            console.log("Error");
+        }
+    }
 
     useEffect(() => {
         if (!user) {
@@ -77,17 +129,17 @@ export default function HomePage() {
                             </div>
                             <div className="max-w-3xl"> {/* Prevents ultra-wide stretching */}
                                 <span className="font-bold">{msg.user}</span>
-                                <p className="text-gray-200">{msg.text}</p>
+                                <p className="text-gray-200">{msg.content}</p>
                             </div>
                         </div>
                     ))}
                 </div>
 
                 {/* Input */}
-                <form onSubmit={sendMessage} className="p-4 border-t border-gray-700 flex bg-gray-900">
+                <form onSubmit={sendWebMessage} className="p-4 border-t border-gray-700 flex bg-gray-900">
                     <input
-                        value={input}
-                        onChange={(e) => setInput(e.target.value)}
+                        value={messageToSend}
+                        onChange={(e) => setMessageToSend(e.target.value)}
                         placeholder="Message #general"
                         className="flex-1 bg-gray-800 text-white px-4 py-2 rounded focus:outline-none"
                     />
