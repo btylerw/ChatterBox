@@ -1,9 +1,8 @@
 import { useState } from "react";
+import { useUser } from "../contexts/UserContext";
 import { useNavigate } from "react-router-dom";
-import axios from "axios";
 
 export default function LoginPage() {
-    const SERVER_URL = import.meta.env.VITE_SERVER_URL;
     const [error, setError] = useState<string>("");
     const [showError, setShowError] = useState<boolean>(false);
     const [formData, setFormData] = useState({
@@ -11,6 +10,7 @@ export default function LoginPage() {
         password: "",
     });
     const navigate = useNavigate();
+    const { login } = useUser();
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { name, value } = e.target;
@@ -22,28 +22,14 @@ export default function LoginPage() {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        try {
-            const response = await axios.post(`${SERVER_URL}/auth/login`,
-                formData,
-                {
-                    headers: {
-                        "Content-Type": "application/json",
-                    },
-                }
-            );
-            if (showError) {
-                setShowError(false);
-                setError("");
-            }
-            console.log(response.data);
+        const response = await login(formData);
+        if (typeof response === "string") {
+            setError(response);
+            setShowError(true);
+        } else {
+            setError("");
+            setShowError(false);
             navigate("/home");
-        } catch (err: unknown) {
-            if (axios.isAxiosError(err)) {
-                setError(err.response?.data?.detail ?? "Unknown Axios Error");
-                setShowError(true);
-            } else {
-                console.error("Unexpected error", err);
-            }
         }
     }
 

@@ -33,4 +33,5 @@ def login(user_in: UserLogin, db: Session = Depends(get_db)):
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid username or password",
         )
-    return { "message": f"User {user.username} successfully logged in"}
+    userDetails = { "username": user.username, "id": user.id }
+    return userDetails

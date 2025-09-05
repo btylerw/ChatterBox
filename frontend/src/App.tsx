@@ -52,20 +52,20 @@ function App() {
   }
 
   return (
-    <div className="gap-4">
-      {!showCreate ? (
-        <>
-          <LoginPage />
-          <button className="w-80" onClick={handleClick}>Create Account</button>
-        </>
-       ) : (
-        <>
-          <CreateAccount />
-          <button className="w-80" onClick={handleClick}>Log In</button>
-        </>
-       )
-      }
-    </div>
+      <div className="gap-4">
+        {!showCreate ? (
+          <>
+            <LoginPage />
+            <button className="w-80" onClick={handleClick}>Create Account</button>
+          </>
+        ) : (
+          <>
+            <CreateAccount />
+            <button className="w-80" onClick={handleClick}>Log In</button>
+          </>
+        )
+        }
+      </div>
   )
 }
 
