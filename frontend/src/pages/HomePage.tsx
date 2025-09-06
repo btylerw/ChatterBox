@@ -44,7 +44,8 @@ export default function HomePage() {
         webSocketRef.current.onmessage = (e) => {
 			console.log(e.data);
             const parsed: MessagePayload = JSON.parse(e.data);
-            const { username, content } = parsed;
+            const { username, content, type } = parsed;
+            if (username === user?.username && type === "connect") return;
             setMessages((prevMessages) => [
                 ...prevMessages,
                 { id: Date.now(), user: username, content: content },
