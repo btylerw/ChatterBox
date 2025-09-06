@@ -6,6 +6,7 @@ export default function HomePage() {
 
     interface MessagePayload {
         id: number,
+		type: string,
         username: string,
         content: string,
     }
@@ -29,9 +30,19 @@ export default function HomePage() {
         webSocketRef.current = new WebSocket("ws://localhost:8000/chat/ws-broadcast");
         webSocketRef.current.onopen = () => {
             console.log("WebSocket connection opened!");
+			const data = {
+				id: user?.id ?? 0,
+				type: "connect",
+				username: user?.username ?? "Anonymous",
+				content: "connected"
+			}
+			if (webSocketRef.current && webSocketRef.current.readyState === WebSocket.OPEN) {
+				webSocketRef.current.send(JSON.stringify(data));
+			}
         }
 
         webSocketRef.current.onmessage = (e) => {
+			console.log(e.data);
             const parsed: MessagePayload = JSON.parse(e.data);
             const { username, content } = parsed;
             setMessages((prevMessages) => [
@@ -60,6 +71,7 @@ export default function HomePage() {
         console.log(messageToSend);
         const data: MessagePayload = {
             id: user?.id ?? 0,
+			type: "message",
             username: user?.username ?? "Anonymous",
             content: messageToSend,
         }
@@ -71,6 +83,19 @@ export default function HomePage() {
         }
     }
 
+    const handleLogOut = () => {
+		if (webSocketRef.current && webSocketRef.current.readyState === WebSocket.OPEN) {
+			const data: MessagePayload = {
+				id: user?.id ?? 0,
+				type: "disconnect",
+				username: user?.username ?? "Anonymous",
+				content: "logged out",
+			}
+			webSocketRef.current.send(JSON.stringify(data));
+		}
+		logout();
+		
+    }
     useEffect(() => {
         if (!user) {
             navigate("/");
@@ -83,7 +108,7 @@ export default function HomePage() {
             <div className="hidden md:flex w-[72px] bg-gray-800 flex-col items-center py-4 space-y-4">
                 <div className="w-12 h-12 bg-indigo-600 rounded-full flex items-center justify-center">D</div>
                 <div className="w-12 h-12 bg-gray-700 rounded-full flex items-center justify-center">+</div>
-                <div className="w-12 h-12 bg-red-700 rounded-full flex items-center justify-center cursor-pointer" onClick={logout}>Log Out</div>
+                <div className="w-12 h-12 bg-red-700 rounded-full flex items-center justify-center cursor-pointer" onClick={handleLogOut}>Log Out</div>
             </div>
 
             {/* === Channels Sidebar === */}
