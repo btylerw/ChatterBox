@@ -36,9 +36,7 @@ export default function HomePage() {
 				username: user?.username ?? "Anonymous",
 				content: "connected"
 			}
-			if (webSocketRef.current && webSocketRef.current.readyState === WebSocket.OPEN) {
-				webSocketRef.current.send(JSON.stringify(data));
-			}
+            sendWebMessage(JSON.stringify(data));
         }
 
         webSocketRef.current.onmessage = (e) => {
@@ -67,33 +65,34 @@ export default function HomePage() {
         };
     }, []);
 
-    const sendWebMessage = (e: React.FormEvent) => {
-        e.preventDefault();
-        console.log(messageToSend);
-        const data: MessagePayload = {
-            id: user?.id ?? 0,
-			type: "message",
-            username: user?.username ?? "Anonymous",
-            content: messageToSend,
-        }
+    const sendWebMessage = (data: string) => {
         if (webSocketRef.current && webSocketRef.current.readyState === WebSocket.OPEN) {
-            webSocketRef.current.send(JSON.stringify(data));
-            setMessageToSend('');
+            webSocketRef.current.send(data);
         } else {
             console.log("Error");
         }
     }
 
+    const handleSubmit = (e: React.FormEvent) => {
+        e.preventDefault();
+        const data: MessagePayload =  {
+            id: user?.id ?? 0,
+            type: "message",
+            username: user?.username ?? "Anonymous",
+            content: messageToSend,
+        }
+        sendWebMessage(JSON.stringify(data));
+        setMessageToSend('');
+    }
+
     const handleLogOut = () => {
-		if (webSocketRef.current && webSocketRef.current.readyState === WebSocket.OPEN) {
-			const data: MessagePayload = {
-				id: user?.id ?? 0,
-				type: "disconnect",
-				username: user?.username ?? "Anonymous",
-				content: "logged out",
-			}
-			webSocketRef.current.send(JSON.stringify(data));
-		}
+        const data: MessagePayload = {
+            id: user?.id ?? 0,
+            type: "disconnect",
+            username: user?.username ?? "Anonymous",
+            content: "logged out",
+        }
+        sendWebMessage(JSON.stringify(data));
 		logout();
 		
     }
@@ -162,7 +161,7 @@ export default function HomePage() {
                 </div>
 
                 {/* Input */}
-                <form onSubmit={sendWebMessage} className="p-4 border-t border-gray-700 flex bg-gray-900">
+                <form onSubmit={handleSubmit} className="p-4 border-t border-gray-700 flex bg-gray-900">
                     <input
                         value={messageToSend}
                         onChange={(e) => setMessageToSend(e.target.value)}
