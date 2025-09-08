@@ -19,15 +19,26 @@ export default function HomePage() {
 
     const { user, logout } = useUser();
     const [messages, setMessages] = useState<ChatMessage[]>([]);
+    const [chatId, setChatId] = useState<string>("");
     const [showChannels, setShowChannels] = useState(false);
     const navigate = useNavigate();
     const webSocketRef = useRef<WebSocket | null>(null);
     const [messageToSend, setMessageToSend] = useState<string>("");
 
     useEffect(() => {
-        if (webSocketRef.current) return;
+        if (user?.username === "Payn" || user?.username === "Tyler") {
+            setChatId("hello");
+        } else {
+            setChatId("no");
+        }
+    }, [user]);
 
-        webSocketRef.current = new WebSocket("ws://localhost:8000/chat/ws-broadcast");
+    useEffect(() => {
+        if (!chatId) return;
+        if (webSocketRef.current) return;
+        console.log(chatId);
+
+        webSocketRef.current = new WebSocket(`ws://localhost:8000/chat/ws/${chatId}`);
         webSocketRef.current.onopen = () => {
             console.log("WebSocket connection opened!");
 			const data = {
@@ -40,7 +51,6 @@ export default function HomePage() {
         }
 
         webSocketRef.current.onmessage = (e) => {
-			console.log(e.data);
             const parsed: MessagePayload = JSON.parse(e.data);
             const { username, content, type } = parsed;
             if (username === user?.username && type === "connect") return;
@@ -63,7 +73,7 @@ export default function HomePage() {
                 webSocketRef.current.close();
             }
         };
-    }, []);
+    }, [chatId]);
 
     const sendWebMessage = (data: string) => {
         if (webSocketRef.current && webSocketRef.current.readyState === WebSocket.OPEN) {

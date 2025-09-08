@@ -11,18 +11,24 @@ class MessageRequest(BaseModel):
 
 class ConnectionManager:
     def __init__(self):
-        self.active_connections: List[WebSocket] = []
+        self.active_connections: dict[str, list[WebSocket]] = {}
     
-    async def connect(self, websocket: WebSocket):
+    async def connect(self, websocket: WebSocket, chat_id: str):
         await websocket.accept()
-        self.active_connections.append(websocket)
+        if chat_id not in self.active_connections:
+            self.active_connections[chat_id] = []
+        self.active_connections[chat_id].append(websocket)
     
-    def disconnect(self, websocket: WebSocket):
-        self.active_connections.remove(websocket)
+    def disconnect(self, websocket: WebSocket, chat_id: str):
+        if chat_id in self.active_connections:
+            self.active_connections[chat_id].remove(websocket)
+            if not self.active_connections[chat_id]:
+                del self.active_connections[chat_id]
     
-    async def broadcast(self, message: str):
-        for connection in self.active_connections:
-            await connection.send_text(message)
+    async def broadcast(self, message: str, chat_id: str):
+        if chat_id in self.active_connections:
+            for connection in self.active_connections[chat_id]:
+                await connection.send_text(message)
 
 manager = ConnectionManager()
 
@@ -41,12 +47,12 @@ async def websocket_endpoint(websocket: WebSocket):
         print(data)
         await websocket.send_text(data)
 
-@router.websocket("/ws-broadcast")
-async def websocket_endpoint(websocket: WebSocket):
-    await manager.connect(websocket)
+@router.websocket("/ws/{chat_id}")
+async def websocket_endpoint(websocket: WebSocket, chat_id: str):
+    await manager.connect(websocket, chat_id)
     try:
         while True:
             data = await websocket.receive_text()
-            await manager.broadcast(data)
+            await manager.broadcast(data, chat_id)
     except WebSocketDisconnect:
-        manager.disconnect(websocket)
+        manager.disconnect(websocket, chat_id)
