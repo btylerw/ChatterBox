@@ -1,8 +1,21 @@
-from fastapi import APIRouter, WebSocket, WebSocketDisconnect
+from fastapi import APIRouter, WebSocket, WebSocketDisconnect, Depends
 from typing import List
+from sqlalchemy.orm import Session
+from app.db.session import SessionLocal
 from pydantic import BaseModel
+from app.crud.chat import create_chat
+from app.models import Chats, ChatMembership
+from app.schemas.chats import ChatCreate, ChatResponse
 
-router = APIRouter()
+
+router = APIRouter(prefix="/chat", tags=["Chat"])
+
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
 
 class MessageRequest(BaseModel):
     sender: str
@@ -56,3 +69,14 @@ async def websocket_endpoint(websocket: WebSocket, chat_id: str):
             await manager.broadcast(data, chat_id)
     except WebSocketDisconnect:
         manager.disconnect(websocket, chat_id)
+
+@router.post("/create-chat", response_model=ChatResponse)
+async def create(chat_in: ChatCreate, db: Session = Depends(get_db)):
+    chat = create_chat(db, chat_in)
+    member_ids = [m.user_id for m in chat.memberships]
+    return ChatResponse(
+        id=chat.id,
+        name=chat.name,
+        is_group=chat.is_group,
+        members=member_ids
+    )

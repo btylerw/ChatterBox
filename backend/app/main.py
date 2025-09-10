@@ -30,4 +30,4 @@ def root():
     return { "message" : "Welcome to Chatterbox API" }
 
 app.include_router(auth.router)
-app.include_router(chat.router, prefix="/chat", tags=["Chat"])
+app.include_router(chat.router)

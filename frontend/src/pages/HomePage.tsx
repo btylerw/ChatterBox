@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useUser } from "../contexts/UserContext";
 import { useNavigate } from "react-router-dom";
+import axios from "axios";
 
 export default function HomePage() {
 
@@ -24,8 +25,18 @@ export default function HomePage() {
     const navigate = useNavigate();
     const webSocketRef = useRef<WebSocket | null>(null);
     const [messageToSend, setMessageToSend] = useState<string>("");
+    const SERVER_URL = import.meta.env.VITE_SERVER_URL;
+    
+    // THESE STATES ARE FOR TESTING PURPOSES. BE SURE TO DELETE WHEN IMPLEMENTING A PERMANENT
+    // SOLUTION FOR CREATING NEW CHATS
+    const [buttonText, setButtonText] = useState<string>("Create Chat with Payn");
+    const [chatUserId, setChatUserId] = useState<number>(1);
 
     useEffect(() => {
+        if (user?.username === "Payn") {
+            setButtonText("Create Chat with Tyler");
+            setChatUserId(5);
+        }
         if (user?.username === "Payn" || user?.username === "Tyler") {
             setChatId("hello");
         } else {
@@ -106,6 +117,25 @@ export default function HomePage() {
 		logout();
 		
     }
+
+    const handleCreateChat = async () => {
+        const chatName = "TestChat" + Date.now();
+        const data = { name: chatName, is_group: false, user_ids: [user?.id, chatUserId] }
+        console.log(chatName);
+        try {
+            const response = await axios.post(`${SERVER_URL}/chat/create-chat`,
+                data,
+                {
+                    headers: {
+                        "Content-Type": "application/json",
+                    }
+                },
+            );
+            console.log(response.data);
+        } catch(err) {
+            console.error(err);
+        }
+    }
     useEffect(() => {
         if (!user) {
             navigate("/");
@@ -139,6 +169,8 @@ export default function HomePage() {
                 <div className="flex-1 p-3 space-y-2">
                     <div className="hover:bg-gray-700 rounded px-2 py-1 cursor-pointer"># general</div>
                     <div className="hover:bg-gray-700 rounded px-2 py-1 cursor-pointer"># random</div>
+                    {/* THIS  BUTTON IS FOR TESTING PURPOSES. DELETE WHEN PERMANENT SOLUTION IS IMPLEMENTED */}
+                    <button onClick={handleCreateChat}>{buttonText}</button>
                 </div>
             </div>
 
