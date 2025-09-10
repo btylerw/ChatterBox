@@ -18,10 +18,12 @@ export default function HomePage() {
         content: string;
     }
 
-    const { user, logout } = useUser();
+    const { user, chats, logout } = useUser();
+    // UPDATE STATE ACCORDINGLY. MESSAGES SHOULD BE BOUND TO THEIR SPECIFIC CHATROOM
     const [messages, setMessages] = useState<ChatMessage[]>([]);
-    const [chatId, setChatId] = useState<string>("");
-    const [showChannels, setShowChannels] = useState(false);
+    // UPDATE TYPES HERE LATER
+    const [chatId, setChatId] = useState<number | null | string>(null);
+    const [showChannels, setShowChannels] = useState<boolean>(false);
     const navigate = useNavigate();
     const webSocketRef = useRef<WebSocket | null>(null);
     const [messageToSend, setMessageToSend] = useState<string>("");
@@ -33,6 +35,9 @@ export default function HomePage() {
     const [chatUserId, setChatUserId] = useState<number>(1);
 
     useEffect(() => {
+        // FINE FOR NOW
+        // WILL DEFAULT TO FIRST CHAT IN LIST LATER
+        console.log(chats);
         if (user?.username === "Payn") {
             setButtonText("Create Chat with Tyler");
             setChatUserId(5);
@@ -142,6 +147,14 @@ export default function HomePage() {
         }
     }, [user]);
 
+    const handleChatChange = (key: number) => {
+        if (webSocketRef.current) {
+            webSocketRef.current.close();
+            webSocketRef.current = null;
+        }
+        setChatId(key);
+    }
+
     return (
         <div className="flex h-screen bg-gray-900 text-white overflow-hidden">
             {/* === Server Sidebar (always narrow) === */}
@@ -167,6 +180,9 @@ export default function HomePage() {
                     </button>
                 </div>
                 <div className="flex-1 p-3 space-y-2">
+                    {chats?.map((chat) => (
+                        <div key={chat?.id} onClick={() => handleChatChange(chat?.id)} className="hover:bg-gray-700 rounded px-2 py-1 cursor-pointer">{chat?.name}</div>
+                    ))}
                     <div className="hover:bg-gray-700 rounded px-2 py-1 cursor-pointer"># general</div>
                     <div className="hover:bg-gray-700 rounded px-2 py-1 cursor-pointer"># random</div>
                     {/* THIS  BUTTON IS FOR TESTING PURPOSES. DELETE WHEN PERMANENT SOLUTION IS IMPLEMENTED */}

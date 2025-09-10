@@ -11,17 +11,28 @@ interface User {
     username: string;
 }
 
+interface Chat {
+    id: number;
+    name: string;
+    is_group: boolean;
+    members: string[];
+}
+
 interface UserContextType {
     user: User | null;
     login: (user: UserCredentials) => Promise<User | void | string>;
     logout: () => void;
+    chats: Chat[] | null;
 }
+
 
 const UserContext = createContext<UserContextType | undefined>(undefined);
 const SERVER_URL = import.meta.env.VITE_SERVER_URL;
 
 export function UserProvider({ children }: { children: ReactNode }) {
     const [user, setUser] = useState<User | null>(null);
+    const [chats, setChats] = useState<Chat[] | null>(null);
+
     const login = async (newUser: UserCredentials) => {
         try {
             const response = await axios.post(`${SERVER_URL}/auth/login`,
@@ -32,6 +43,10 @@ export function UserProvider({ children }: { children: ReactNode }) {
                     },
                 }
             );
+            if (response) {
+                const chatData = await axios.get(`${SERVER_URL}/users/chats/${response?.data?.id}`);
+                setChats(chatData.data);
+            }
             console.log(response.data);
             setUser(response.data);
         } catch (err: unknown) {
@@ -43,10 +58,11 @@ export function UserProvider({ children }: { children: ReactNode }) {
             }
         }
     };
+
     const logout = () => setUser(null);
 
     return (
-        <UserContext.Provider value={{ user, login, logout }}>
+        <UserContext.Provider value={{ user, login, logout, chats }}>
             {children}
         </UserContext.Provider>
     );

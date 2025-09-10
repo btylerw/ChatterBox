@@ -3,6 +3,7 @@ from sqlalchemy.exc import IntegrityError
 from fastapi import HTTPException, status
 from app.models import Chats, ChatMembership
 from app.schemas.chats import ChatCreate
+from typing import List
 
 def create_chat(db: Session, chat_in: ChatCreate) -> Chats:
     db_chat = Chats(name=chat_in.name, is_group=chat_in.is_group)
@@ -23,3 +24,11 @@ def create_chat(db: Session, chat_in: ChatCreate) -> Chats:
             status_code=status.HTTP_409_CONFLICT,
             detail="Error creating new chat"
         )
+    
+def get_user_chats(user_id: int, db: Session) -> List[Chats]:
+    return (
+        db.query(Chats)
+        .join(ChatMembership, ChatMembership.chat_id == Chats.id)
+        .filter(ChatMembership.user_id == user_id)
+        .all()
+    )
