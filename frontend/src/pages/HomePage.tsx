@@ -18,11 +18,19 @@ export default function HomePage() {
         content: string;
     }
 
+    interface Chat {
+        id: number;
+        name: string;
+        is_group: boolean;
+        members: string[];
+    }
+
     const { user, chats, logout } = useUser();
     // UPDATE STATE ACCORDINGLY. MESSAGES SHOULD BE BOUND TO THEIR SPECIFIC CHATROOM
     const [messages, setMessages] = useState<ChatMessage[]>([]);
     // UPDATE TYPES HERE LATER
     const [chatId, setChatId] = useState<number | null | string>(null);
+    const [chatName, setChatName] = useState<string>("No Chat Selected");
     const [showChannels, setShowChannels] = useState<boolean>(false);
     const navigate = useNavigate();
     const webSocketRef = useRef<WebSocket | null>(null);
@@ -37,15 +45,14 @@ export default function HomePage() {
     useEffect(() => {
         // FINE FOR NOW
         // WILL DEFAULT TO FIRST CHAT IN LIST LATER
-        console.log(chats);
         if (user?.username === "Payn") {
             setButtonText("Create Chat with Tyler");
             setChatUserId(5);
         }
-        if (user?.username === "Payn" || user?.username === "Tyler") {
-            setChatId("hello");
-        } else {
-            setChatId("no");
+
+        if (chats?.[0]) {
+            setChatId(chats?.[0].id);
+            setChatName(chats?.[0].name);
         }
     }, [user]);
 
@@ -150,12 +157,13 @@ export default function HomePage() {
         }
     }, [user]);
 
-    const handleChatChange = (key: number) => {
+    const handleChatChange = (chat: Chat) => {
         if (webSocketRef.current) {
             webSocketRef.current.close();
             webSocketRef.current = null;
         }
-        setChatId(key);
+        setChatId(chat.id);
+        setChatName(chat.name);
     }
 
     return (
@@ -169,7 +177,7 @@ export default function HomePage() {
                 </div>
                 <div className="flex-1 overflow-y-auto p-3 space-y-2">
                     {chats?.map(chat => (
-                        <div key={chat?.id} onClick={() => handleChatChange(chat?.id)} className="hover:bg-gray-700 rounded px-2 py-1 cursor-pointer">{chat?.name}</div>
+                        <div key={chat?.id} onClick={() => handleChatChange(chat)} className="hover:bg-gray-700 rounded px-2 py-1 cursor-pointer">{chat?.name}</div>
                     ))}
                     <div className="hover:bg-gray-700 rounded px-2 py-1 cursor-pointer"># general</div>
                     <div className="hover:bg-gray-700 rounded px-2 py-1 cursor-pointer"># random</div>
@@ -182,7 +190,7 @@ export default function HomePage() {
             <div className="flex-1 flex flex-col min-h-0">
                 {/* Header */}
                 <div className="h-14 bg-gray-800 border-b border-gray-700 flex items-center px-4 justify-between">
-                    <span className="font-bold text-lg"># general</span>
+                    <span className="font-bold text-lg">{chatName}</span>
                     <button className="md:hidden text-gray-400" onClick={() => setShowChannels(true)}>☰</button>
                 </div>
 
