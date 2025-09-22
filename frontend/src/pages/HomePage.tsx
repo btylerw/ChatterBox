@@ -77,6 +77,13 @@ export default function HomePage() {
         };
 
         webSocketRef.current.onclose = () => {
+            const data: MessagePayload = {
+                id: user?.id ?? 0,
+                type: "disconnect",
+                username: user?.username ?? "Anonymous",
+                content: "logged out",
+            }
+            sendWebMessage(JSON.stringify(data));
             console.log("WebSocket connection closed");
         }
 
@@ -112,13 +119,9 @@ export default function HomePage() {
     }
 
     const handleLogOut = () => {
-        const data: MessagePayload = {
-            id: user?.id ?? 0,
-            type: "disconnect",
-            username: user?.username ?? "Anonymous",
-            content: "logged out",
+        if (webSocketRef.current) {
+            webSocketRef.current.close();
         }
-        sendWebMessage(JSON.stringify(data));
 		logout();
 		
     }
@@ -156,7 +159,7 @@ export default function HomePage() {
     }
 
     return (
-        <div className="flex h-screen bg-gray-900 text-white overflow-hidden">
+        <div className="flex h-screen w-screen bg-gray-900 text-white">
             {/* === Server Sidebar (always narrow) === */}
             <div className="hidden md:flex w-[72px] bg-gray-800 flex-col items-center py-4 space-y-4">
                 <div className="w-12 h-12 bg-indigo-600 rounded-full flex items-center justify-center">D</div>
@@ -191,7 +194,7 @@ export default function HomePage() {
             </div>
 
             {/* === Chat Area === */}
-            <div className="flex-1 flex flex-col min-w-0 bg-gray-900">
+            <div className="flex-1 flex flex-col min-h-0 bg-gray-900">
                 {/* Header */}
                 <div className="h-14 bg-gray-800 border-b border-gray-700 flex items-center px-4 justify-between">
                     <span className="font-bold text-lg"># general</span>
