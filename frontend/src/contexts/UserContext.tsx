@@ -1,30 +1,6 @@
 import { createContext, useContext, useState, type ReactNode } from "react";
+import type { User, UserCredentials, Chat, UserContextType } from "../types";
 import axios from "axios";
-
-interface UserCredentials {
-    username: string;
-    password: string;
-}
-
-interface User {
-    id: number;
-    username: string;
-}
-
-interface Chat {
-    id: number;
-    name: string;
-    is_group: boolean;
-    members: string[];
-}
-
-interface UserContextType {
-    user: User | null;
-    login: (user: UserCredentials) => Promise<User | void | string>;
-    logout: () => void;
-    chats: Chat[] | null;
-}
-
 
 const UserContext = createContext<UserContextType | undefined>(undefined);
 const SERVER_URL = import.meta.env.VITE_SERVER_URL;

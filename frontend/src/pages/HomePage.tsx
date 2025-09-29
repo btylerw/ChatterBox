@@ -1,31 +1,10 @@
-import { useState, useEffect, useRef, type ReactEventHandler } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useUser } from "../contexts/UserContext";
 import { useNavigate } from "react-router-dom";
-import axios from "axios";
-import { useDebouncedValue } from "../functions/debounced";
+import SearchBar from "../components/SearchBar";
+import type { MessagePayload, ChatMessage, Chat, User } from "../types";
 
 export default function HomePage() {
-
-    interface MessagePayload {
-        id: number,
-		type: string,
-        username: string,
-        content: string,
-    }
-
-    interface ChatMessage {
-        id: number;
-        user: string;
-        content: string;
-    }
-
-    interface Chat {
-        id: number;
-        name: string;
-        is_group: boolean;
-        members: string[];
-    }
-
     const { user, chats, logout } = useUser();
     // UPDATE STATE ACCORDINGLY. MESSAGES SHOULD BE BOUND TO THEIR SPECIFIC CHATROOM
     const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -36,30 +15,15 @@ export default function HomePage() {
     const navigate = useNavigate();
     const webSocketRef = useRef<WebSocket | null>(null);
     const [messageToSend, setMessageToSend] = useState<string>("");
-    const [searchUser, setSearchUser] = useState<string>("");
-    const debouncedQuery = useDebouncedValue(searchUser, 400);
-    const SERVER_URL = import.meta.env.VITE_SERVER_URL;
+    const [selectedUser, setSelectedUser] = useState<User | null>(null);
 
     useEffect(() => {
+        console.log(selectedUser);
         if (chats?.[0]) {
             setChatId(chats?.[0].id);
             setChatName(chats?.[0].name);
         }
     }, [chats]);
-
-    useEffect(() => {
-        if (debouncedQuery.length < 2) return;
-        const searchUsers = async () => {
-            try {
-                const response = await axios.get(`${SERVER_URL}/users/search_users?q=${debouncedQuery}`);
-                console.log(response.data);
-            } catch (err) {
-                console.error(err);
-            }
-        };
-
-        searchUsers();
-    })
 
     useEffect(() => {
         if (!chatId) return;
@@ -173,10 +137,6 @@ export default function HomePage() {
         setChatName(chat.name);
     }
 
-    const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        setSearchUser(e.target.value);
-    }
-
     return (
         <div className="flex h-screen w-screen bg-gray-900 text-white overflow-hidden">
 
@@ -190,9 +150,7 @@ export default function HomePage() {
                     {chats?.map(chat => (
                         <div key={chat?.id} onClick={() => handleChatChange(chat)} className="hover:bg-gray-700 rounded px-2 py-1 cursor-pointer">{chat?.name}</div>
                     ))}
-                    <div className="hover:bg-gray-700 rounded px-2 py-1 cursor-pointer"># general</div>
-                    <div className="hover:bg-gray-700 rounded px-2 py-1 cursor-pointer"># random</div>
-                    <input type="text" value={searchUser} onChange={handleSearchChange} />
+                    <SearchBar onUserSelect={setSelectedUser}/>
                 </div>
                 <div className="h-12 bg-red-700 rounded-md flex items-center justify-center cursor-pointer m-3" onClick={handleLogOut}>Log Out</div>
             </div>
