@@ -1,7 +1,8 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, type ReactEventHandler } from "react";
 import { useUser } from "../contexts/UserContext";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
+import { useDebouncedValue } from "../functions/debounced";
 
 export default function HomePage() {
 
@@ -35,26 +36,30 @@ export default function HomePage() {
     const navigate = useNavigate();
     const webSocketRef = useRef<WebSocket | null>(null);
     const [messageToSend, setMessageToSend] = useState<string>("");
+    const [searchUser, setSearchUser] = useState<string>("");
+    const debouncedQuery = useDebouncedValue(searchUser, 400);
     const SERVER_URL = import.meta.env.VITE_SERVER_URL;
-    
-    // THESE STATES ARE FOR TESTING PURPOSES. BE SURE TO DELETE WHEN IMPLEMENTING A PERMANENT
-    // SOLUTION FOR CREATING NEW CHATS
-    const [buttonText, setButtonText] = useState<string>("Create Chat with Payn");
-    const [chatUserId, setChatUserId] = useState<number>(1);
 
     useEffect(() => {
-        // FINE FOR NOW
-        // WILL DEFAULT TO FIRST CHAT IN LIST LATER
-        if (user?.username === "Payn") {
-            setButtonText("Create Chat with Tyler");
-            setChatUserId(5);
-        }
-
         if (chats?.[0]) {
             setChatId(chats?.[0].id);
             setChatName(chats?.[0].name);
         }
-    }, [user]);
+    }, [chats]);
+
+    useEffect(() => {
+        if (debouncedQuery.length < 2) return;
+        const searchUsers = async () => {
+            try {
+                const response = await axios.get(`${SERVER_URL}/users/search_users?q=${debouncedQuery}`);
+                console.log(response.data);
+            } catch (err) {
+                console.error(err);
+            }
+        };
+
+        searchUsers();
+    })
 
     useEffect(() => {
         if (!chatId) return;
@@ -133,6 +138,7 @@ export default function HomePage() {
 		
     }
 
+    /*
     const handleCreateChat = async () => {
         const chatName = "TestChat" + Date.now();
         const data = { name: chatName, is_group: false, user_ids: [user?.id, chatUserId] }
@@ -151,6 +157,7 @@ export default function HomePage() {
             console.error(err);
         }
     }
+    */
     useEffect(() => {
         if (!user) {
             navigate("/");
@@ -164,6 +171,10 @@ export default function HomePage() {
         }
         setChatId(chat.id);
         setChatName(chat.name);
+    }
+
+    const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        setSearchUser(e.target.value);
     }
 
     return (
@@ -181,7 +192,7 @@ export default function HomePage() {
                     ))}
                     <div className="hover:bg-gray-700 rounded px-2 py-1 cursor-pointer"># general</div>
                     <div className="hover:bg-gray-700 rounded px-2 py-1 cursor-pointer"># random</div>
-                    <button onClick={handleCreateChat}>{buttonText}</button>
+                    <input type="text" value={searchUser} onChange={handleSearchChange} />
                 </div>
                 <div className="h-12 bg-red-700 rounded-md flex items-center justify-center cursor-pointer m-3" onClick={handleLogOut}>Log Out</div>
             </div>

@@ -1,9 +1,11 @@
-from fastapi import APIRouter, WebSocket, WebSocketDisconnect, Depends
+from fastapi import APIRouter, WebSocket, WebSocketDisconnect, Depends, Query
 from typing import List
 from sqlalchemy.orm import Session
 from app.db.session import SessionLocal
 from app.crud.chat import get_user_chats
 from app.schemas.chats import ChatCreate, ChatResponse
+from app.schemas.user import SearchUsers
+from app.crud.user import search_users
 
 router = APIRouter(prefix="/users", tags=["Users"])
 
@@ -30,3 +32,7 @@ async def get_chats(user_id: int, db: Session = Depends(get_db)):
             )
         )
     return response
+
+@router.get("/search_users/", response_model=List[SearchUsers])
+async def get_users(q: str = Query(..., min_length=2, max_length=50), db: Session = Depends(get_db)):
+    return search_users(db, q)

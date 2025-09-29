@@ -16,3 +16,10 @@ class UserResponse(BaseModel):
 
     class Config:
         from_attributes = True
+
+class SearchUsers(BaseModel):
+    id: int
+    username: str
+
+    class Config:
+        from_attributes = True
