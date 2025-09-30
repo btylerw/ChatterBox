@@ -1,9 +1,18 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from starlette.middleware.base import BaseHTTPMiddleware
 from app.api import chat
 from app.api import auth
 from app.api import users
 import os
+
+class ForwardedProtoMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request: Request, call_next):
+        forwarded_proto = request.headers.get("X-Forwarded-Proto")
+        if forwarded_proto == "https":
+            request.scope["scheme"] = "https"
+        response = await call_next(request)
+        return response
 
 app = FastAPI(
     title="ChatterBox API",
@@ -21,6 +30,7 @@ origins = [
 origins.extend(domain)
 
 app.add_middleware(
+    ForwardedProtoMiddleware,
     CORSMiddleware,
     allow_origins = origins,
     allow_credentials=True,
