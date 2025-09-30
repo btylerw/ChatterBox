@@ -29,14 +29,14 @@ origins = [
     "https://chatterbox.tyler-brown.dev",
 ]
 #origins.extend(domain)
-app.add_middleware(CORSMiddleware)
 app.add_middleware(
-    ForwardedProtoMiddleware,
+    CORSMiddleware,
     allow_origins = origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+app.add_middleware(ForwardedProtoMiddleware)
 
 @app.get("/")
 
