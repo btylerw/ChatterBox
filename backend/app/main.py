@@ -21,17 +21,17 @@ app = FastAPI(
 )
 
 # Set to local machine currently
-domain = os.getenv("SITE_DOMAIN", "").split(",")
+#domain = os.getenv("SITE_DOMAIN", "").split(",")
 origins = [
     "http://localhost:5173",
     "http://127.0.0.1:5173",
     "http://localhost:4000",
+    "https://chatterbox.tyler-brown.dev",
 ]
-origins.extend(domain)
-
+#origins.extend(domain)
+app.add_middleware(CORSMiddleware)
 app.add_middleware(
     ForwardedProtoMiddleware,
-    CORSMiddleware,
     allow_origins = origins,
     allow_credentials=True,
     allow_methods=["*"],
