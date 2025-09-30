@@ -45,21 +45,6 @@ class ConnectionManager:
 
 manager = ConnectionManager()
 
-@router.post("/send-message")
-async def send_message(request: MessageRequest):
-    return {
-        "status": "success",
-        "message": f"Message from {request.sender} to {request.recipient} received: {request.content}"
-    }
-
-@router.websocket("/ws")
-async def websocket_endpoint(websocket: WebSocket):
-    await websocket.accept()
-    while True:
-        data = await websocket.receive_text()
-        print(data)
-        await websocket.send_text(data)
-
 @router.websocket("/ws/{chat_id}")
 async def websocket_endpoint(websocket: WebSocket, chat_id: str):
     await manager.connect(websocket, chat_id)

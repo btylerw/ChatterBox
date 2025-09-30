@@ -3,6 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.api import chat
 from app.api import auth
 from app.api import users
+import os
 
 app = FastAPI(
     title="ChatterBox API",
@@ -11,10 +12,12 @@ app = FastAPI(
 )
 
 # Set to local machine currently
+domain = os.getenv("SITE_DOMAIN", "").split(",")
 origins = [
     "http://localhost:5173",
     "http://127.0.0.1:5173",
     "http://localhost:4000",
+    domain,
 ]
 
 app.add_middleware(
