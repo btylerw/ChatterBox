@@ -22,7 +22,7 @@ app = FastAPI(
 
 @app.middleware("http")
 async def log_request(request: Request, call_next):
-    print(f"METHOD: {request.method}, PATH: {request.url_path}")
+    print(f"METHOD: {request.method}, PATH: {request.url.path}")
     print(f"HEADERS: {dict(request.headers)}")
     response = await call_next(request)
     print(f"RESPONSE HEADERS: {dict(response.headers)}")
