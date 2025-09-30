@@ -58,12 +58,12 @@ jobs:
           script: |
             IMAGE_URI=${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/chatterbox-backend:latest
             docker pull $IMAGE_URI
-            docker stop chatterapi || true
-            docker rm chatterapi || true
+            docker stop chatterbox-backend || true
+            docker rm chatterbox-backend || true
             docker run -d \
               -p 8000:80 \
               -e SITE_DOMAIN=https://chatterbox.tyler-brown.dev \
-              --name chatterapi \
+              --name chatterbox-backend \
               $IMAGE_URI
 
       - name: Remove SSH rule after deployment
