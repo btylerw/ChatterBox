@@ -25,10 +25,8 @@ app = FastAPI(
 origins = [
     "http://localhost:5173",
     "http://127.0.0.1:5173",
-    "http://localhost:4000",
     "https://chatterbox.tyler-brown.dev",
 ]
-#origins.extend(domain)
 app.add_middleware(
     CORSMiddleware,
     allow_origins = origins,
@@ -36,7 +34,7 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-app.add_middleware(ForwardedProtoMiddleware)
+#app.add_middleware(ForwardedProtoMiddleware)
 
 @app.get("/")
 
