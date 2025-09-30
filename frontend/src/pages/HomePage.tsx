@@ -17,6 +17,8 @@ export default function HomePage() {
     const [messageToSend, setMessageToSend] = useState<string>("");
     const [selectedUser, setSelectedUser] = useState<User | null>(null);
 
+    const WEBSOCKET_URL = import.meta.env.VITE_WEBSOCKET_URL;
+
     useEffect(() => {
         console.log(selectedUser);
         if (chats?.[0]) {
@@ -30,7 +32,7 @@ export default function HomePage() {
         if (webSocketRef.current) return;
         console.log(chatId);
 
-        webSocketRef.current = new WebSocket(`ws://localhost:8000/chat/ws/${chatId}`);
+        webSocketRef.current = new WebSocket(`${WEBSOCKET_URL}/chat/ws/${chatId}`);
         webSocketRef.current.onopen = () => {
             console.log("WebSocket connection opened!");
 			const data = {
