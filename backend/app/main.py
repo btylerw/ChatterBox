@@ -20,6 +20,14 @@ app = FastAPI(
     description="Backend for real-time chat app with FastAPI"
 )
 
+@app.middleware("http")
+async def log_request(request: Request, call_next):
+    print(f"METHOD: {request.method}, PATH: {request.url_path}")
+    print(f"HEADERS: {dict(request.headers)}")
+    response = await call_next(request)
+    print(f"RESPONSE HEADERS: {dict(response.headers)}")
+    return response
+
 # Set to local machine currently
 #domain = os.getenv("SITE_DOMAIN", "").split(",")
 origins = [
