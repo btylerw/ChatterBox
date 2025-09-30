@@ -30,6 +30,19 @@ jobs:
       - name: Login to AWS ECR
         uses: aws-actions/amazon-ecr-login@v2
 
+      - name: Get GitHub Actions runner public IP
+        id: get_runner_ip
+        run: echo "RUNNER_IP=$(curl -s ifconfig.me)" >> $GITHUB_ENV
+
+      - name: Allow SSH from GitHub Actions runner
+        run: |
+          aws ec2 authorize-security-group-ingress \
+            --region ${{ secrets.AWS_REGION }} \
+            --group-id ${{ secrets.EC2_SECURITY_GROUP_ID }} \
+            --protocol tcp \
+            --port 22 \
+            --cidr ${RUNNER_IP}/32
+
       - name: Build and Push Docker image
         run: |
           IMAGE_URI=${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/chatterbox-backend:latest
@@ -43,11 +56,21 @@ jobs:
           username: ${{ secrets.EC2_USER }}
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
-            docker pull ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/chatterbox-backend:latest
+            IMAGE_URI=${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/chatterbox-backend:latest
+            docker pull $IMAGE_URI
             docker stop chatterapi || true
             docker rm chatterapi || true
             docker run -d \
               -p 8000:80 \
               -e SITE_DOMAIN=https://chatterbox.tyler-brown.dev \
               --name chatterapi \
-              ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/chatterbox-backend:latest
+              $IMAGE_URI
+
+      - name: Remove SSH rule after deployment
+        run: |
+          aws ec2 revoke-security-group-ingress \
+            --region ${{ secrets.AWS_REGION }} \
+            --group-id ${{ secrets.EC2_SECURITY_GROUP_ID }} \
+            --protocol tcp \
+            --port 22 \
+            --cidr ${RUNNER_IP}/32
