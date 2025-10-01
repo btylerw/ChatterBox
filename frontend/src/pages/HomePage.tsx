@@ -16,9 +16,9 @@ export default function HomePage() {
     const webSocketRef = useRef<WebSocket | null>(null);
     const [messageToSend, setMessageToSend] = useState<string>("");
     const [selectedUser, setSelectedUser] = useState<User | null>(null);
-
+    
     const WEBSOCKET_URL = import.meta.env.VITE_WEBSOCKET_URL;
-
+    
     useEffect(() => {
         console.log(selectedUser);
         if (chats?.[0]) {
@@ -26,54 +26,62 @@ export default function HomePage() {
             setChatName(chats?.[0].name);
         }
     }, [chats]);
-
+    
     useEffect(() => {
         if (!chatId) return;
-        if (webSocketRef.current) return;
-        console.log(chatId);
 
-        webSocketRef.current = new WebSocket(`${WEBSOCKET_URL}/chat/ws/${chatId}`);
-        webSocketRef.current.onopen = () => {
-            console.log("WebSocket connection opened!");
-			const data = {
-				id: user?.id ?? 0,
-				type: "connect",
-				username: user?.username ?? "Anonymous",
-				content: "connected"
-			}
-            sendWebMessage(JSON.stringify(data));
+        if (webSocketRef.current) {
+            const ws = webSocketRef.current;
+            if (ws.readyState !== WebSocket.CLOSED) {
+                ws.onclose = () => connectNewSocket();
+                ws.close();
+                return;
+            }
         }
 
-        webSocketRef.current.onmessage = (e) => {
-            const parsed: MessagePayload = JSON.parse(e.data);
-            const { username, content, type } = parsed;
-            if (username === user?.username && type === "connect") return;
-            setMessages((prevMessages) => [
-                ...prevMessages,
-                { id: Date.now(), user: username, content: content },
-            ]);
+        connectNewSocket();
+
+        function connectNewSocket() {
+            const socket = new WebSocket(`${WEBSOCKET_URL}/chat/ws/${chatId}`);
+            webSocketRef.current = socket;
+    
+            socket.onopen = () => {
+                console.log("WebSocket connection opened!");
+                const data = {
+                    id: user?.id ?? 0,
+                    type: "connect",
+                    username: user?.username ?? "Anonymous",
+                    content: "connected"
+                }
+                socket.send(JSON.stringify(data));
+            }
+    
+            socket.onmessage = (e) => {
+                const parsed: MessagePayload = JSON.parse(e.data);
+                const { username, content, type } = parsed;
+                if (username === user?.username && type === "connect") return;
+                setMessages((prevMessages) => [
+                    ...prevMessages,
+                    { id: Date.now(), user: username, content: content },
+                ]);
+            };
+    
+            socket.onclose = () => {
+                console.log("WebSocket connection closed");
+            }
+    
+            socket.onerror = (err) => {
+                console.error("Websocket error:", err);
+            }
+    
+            return () => {
+                socket.close();
+                if (webSocketRef.current === socket) {
+                    webSocketRef.current = null;
+                }
+            };
         };
 
-        webSocketRef.current.onclose = () => {
-            const data: MessagePayload = {
-                id: user?.id ?? 0,
-                type: "disconnect",
-                username: user?.username ?? "Anonymous",
-                content: "logged out",
-            }
-            sendWebMessage(JSON.stringify(data));
-            console.log("WebSocket connection closed");
-        }
-
-        webSocketRef.current.onerror = (err) => {
-            console.error("Websocket error:", err);
-        }
-
-        return () => {
-            if (webSocketRef.current && webSocketRef.current.readyState === WebSocket.OPEN) {
-                webSocketRef.current.close();
-            }
-        };
     }, [chatId]);
 
     const sendWebMessage = (data: string) => {
@@ -104,6 +112,13 @@ export default function HomePage() {
 		
     }
 
+    const handleChatChange = async (chat: Chat) => {
+        if (webSocketRef.current) {
+            webSocketRef.current.close();
+        }
+        setChatId(chat.id);
+        setChatName(chat.name);
+    }
     /*
     const handleCreateChat = async () => {
         const chatName = "TestChat" + Date.now();
@@ -130,14 +145,6 @@ export default function HomePage() {
         }
     }, [user]);
 
-    const handleChatChange = (chat: Chat) => {
-        if (webSocketRef.current) {
-            webSocketRef.current.close();
-            webSocketRef.current = null;
-        }
-        setChatId(chat.id);
-        setChatName(chat.name);
-    }
 
     return (
         <div className="flex h-screen w-screen bg-gray-900 text-white overflow-hidden">
