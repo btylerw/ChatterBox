@@ -30,59 +30,63 @@ export default function HomePage() {
     useEffect(() => {
         if (!chatId) return;
 
-        if (webSocketRef.current) {
-            const ws = webSocketRef.current;
-            if (ws.readyState !== WebSocket.CLOSED) {
-                ws.onclose = () => connectNewSocket();
-                ws.close();
-                return;
-            }
-        }
+        let socket: WebSocket | null = null;
+        let isMounted = true;
 
-        connectNewSocket();
+        const connectNewSocket = () => {
+            if (!isMounted) return;
 
-        function connectNewSocket() {
-            const socket = new WebSocket(`${WEBSOCKET_URL}/chat/ws/${chatId}`);
+            socket = new WebSocket(`${WEBSOCKET_URL}/chat/ws/${chatId}`);
             webSocketRef.current = socket;
-    
+
             socket.onopen = () => {
-                console.log("WebSocket connection opened!");
+                console.log(`WebSocket connection opened for chat ${chatId}`);
                 const data = {
                     id: user?.id ?? 0,
                     type: "connect",
                     username: user?.username ?? "Anonymous",
                     content: "connected"
-                }
-                socket.send(JSON.stringify(data));
-            }
-    
+                };
+                socket?.send(JSON.stringify(data));
+            };
+
             socket.onmessage = (e) => {
                 const parsed: MessagePayload = JSON.parse(e.data);
                 const { username, content, type } = parsed;
+                console.log("Received message:", parsed);
+                
                 if (username === user?.username && type === "connect") return;
+                
                 setMessages((prevMessages) => [
                     ...prevMessages,
                     { id: Date.now(), user: username, content: content },
                 ]);
             };
-    
-            socket.onclose = () => {
-                console.log("WebSocket connection closed");
-            }
-    
+
+            socket.onclose = (event) => {
+                console.log(`WebSocket connection closed for chat ${chatId}`, event.code, event.reason);
+            };
+
             socket.onerror = (err) => {
-                console.error("Websocket error:", err);
-            }
-    
-            return () => {
-                socket.close();
-                if (webSocketRef.current === socket) {
-                    webSocketRef.current = null;
-                }
+                console.error("WebSocket error:", err);
             };
         };
 
-    }, [chatId]);
+        if (webSocketRef.current && webSocketRef.current.readyState !== WebSocket.CLOSED) {
+            webSocketRef.current.close();
+            setTimeout(connectNewSocket, 100);
+        } else {
+            connectNewSocket();
+        }
+
+        return () => {
+            isMounted = false;
+            if (socket && socket.readyState !== WebSocket.CLOSED) {
+                socket.close();
+            }
+            webSocketRef.current = null;
+        };
+    }, [chatId, user?.id, user?.username]);
 
     const sendWebMessage = (data: string) => {
         if (webSocketRef.current && webSocketRef.current.readyState === WebSocket.OPEN) {

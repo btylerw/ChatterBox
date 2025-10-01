@@ -31,17 +31,33 @@ class ConnectionManager:
         if chat_id not in self.active_connections:
             self.active_connections[chat_id] = []
         self.active_connections[chat_id].append(websocket)
+        print(f"Client connected to chat {chat_id}. Total connections: {len(self.active_connections[chat_id])}")
     
     def disconnect(self, websocket: WebSocket, chat_id: str):
         if chat_id in self.active_connections:
-            self.active_connections[chat_id].remove(websocket)
+            try:
+                self.active_connections[chat_id].remove(websocket)
+                print(f"Client disconnected from chat {chat_id}. Remaining: {len(self.active_connections[chat_id])}")
+            except ValueError:
+                print(f"WebSocket not found in chat {chat_id} connections")
             if not self.active_connections[chat_id]:
                 del self.active_connections[chat_id]
+                print(f"Chat {chat_id} has no more connections, removed from manager.")
     
     async def broadcast(self, message: str, chat_id: str):
-        if chat_id in self.active_connections:
-            for connection in self.active_connections[chat_id]:
+        if chat_id not in self.active_connections:
+            print(f"No active connections for chat {chat_id}")
+            return
+        
+        dead_connections = []
+        for connection in self.active_connections[chat_id]:
+            try:
                 await connection.send_text(message)
+            except Exception as e:
+                print(f"Error sending connection: {e}")
+                dead_connections.append(e)
+        for dead_conn in dead_connections:
+            self.disconnect(dead_conn, chat_id)
 
 manager = ConnectionManager()
 
@@ -53,6 +69,8 @@ async def websocket_endpoint(websocket: WebSocket, chat_id: str):
             data = await websocket.receive_text()
             await manager.broadcast(data, chat_id)
     except WebSocketDisconnect:
+        manager.disconnect(websocket, chat_id)
+    except Exception as e:
         manager.disconnect(websocket, chat_id)
 
 @router.post("/create-chat", response_model=ChatResponse)

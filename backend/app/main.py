@@ -20,16 +20,7 @@ app = FastAPI(
     description="Backend for real-time chat app with FastAPI"
 )
 
-@app.middleware("http")
-async def log_request(request: Request, call_next):
-    print(f"METHOD: {request.method}, PATH: {request.url.path}")
-    print(f"HEADERS: {dict(request.headers)}")
-    response = await call_next(request)
-    print(f"RESPONSE HEADERS: {dict(response.headers)}")
-    return response
-
-# Set to local machine currently
-#domain = os.getenv("SITE_DOMAIN", "").split(",")
+app.add_middleware(ForwardedProtoMiddleware)
 origins = [
     "http://localhost:5173",
     "http://127.0.0.1:5173",
@@ -41,8 +32,8 @@ app.add_middleware(
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
+    expose_headers=["*"],
 )
-app.add_middleware(ForwardedProtoMiddleware)
 
 @app.get("/")
 
