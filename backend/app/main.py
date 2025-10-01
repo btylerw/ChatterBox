@@ -20,7 +20,6 @@ app = FastAPI(
     description="Backend for real-time chat app with FastAPI"
 )
 
-app.add_middleware(ForwardedProtoMiddleware)
 origins = [
     "http://localhost:5173",
     "http://127.0.0.1:5173",
@@ -34,6 +33,7 @@ app.add_middleware(
     allow_headers=["*"],
     expose_headers=["*"],
 )
+app.add_middleware(ForwardedProtoMiddleware)
 
 @app.get("/")
 
