@@ -1,9 +1,11 @@
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.middleware.base import BaseHTTPMiddleware
+from contextlib import asynccontextmanager
 from app.api import chat
 from app.api import auth
 from app.api import users
+from app.core.manager import manager
 import os
 
 class ForwardedProtoMiddleware(BaseHTTPMiddleware):
@@ -13,6 +15,16 @@ class ForwardedProtoMiddleware(BaseHTTPMiddleware):
             request.scope["scheme"] = "https"
         response = await call_next(request)
         return response
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    await manager.initialize_redis()
+    print("Application Startup Complete")
+
+    yield
+
+    await manager.close()
+    print("Application shutdown complete")
 
 app = FastAPI(
     title="ChatterBox API",
