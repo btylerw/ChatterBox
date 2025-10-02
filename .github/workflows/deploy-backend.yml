@@ -45,9 +45,13 @@ jobs:
 
       - name: Build and Push Docker image
         run: |
-          IMAGE_URI=${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/chatterbox-backend:latest
-          docker build --no-cache -t $IMAGE_URI ./backend
-          docker push $IMAGE_URI
+          ECR_REGISTRY=${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com
+          IMAGE_TAG =  ${{ github.sha }}
+          docker build --no-cache -t $ECR_REGISTRY/chatterbox-backend:$IMAGE_TAG \
+                                  -t $ECR_REGISTRY/chatterbox-backend:latest \
+                                  ./backend
+          docker push $ECR_REGISTRY/chatterbox-backend:$IMAGE_TAG
+          docker push $ECR_REGISTRY/chatterbox-backend:latest
 
       - name: SSH into EC2 and deploy
         uses: appleboy/ssh-action@v0.1.7
@@ -58,10 +62,13 @@ jobs:
           script: |
             cd ~/chatterbox_deploy
             aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | docker login --username AWS --password-stdin ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com
-            IMAGE_URI=${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/chatterbox-backend:latest
-            docker pull $IMAGE_URI
+            ECR_REGISTRY=${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com
+            IMAGE_TAG=${{ github.sha }}
+            sed -i "s|image:.*chatterbox-backend:.*|image: $ECR_REGISTRY/chatterbox-backend:$IMAGE_TAG|g" docker-compose.yml
+            docker pull $ECR_REGISTRY/chatterbox:backend:$IMAGE_TAG
             docker-compose down
             docker-compose up -d --remove-orphans
+            docker images $ECR_REGISTRY/chatterbox-backend --format "{{.ID}} {{.CreatedAt}}" | sort -rk 2 | awk 'NR>3{print $1}' | xargs -r docker rmi || true
 
 
       - name: Remove SSH rule after deployment
