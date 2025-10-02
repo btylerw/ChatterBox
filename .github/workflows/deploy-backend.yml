@@ -65,7 +65,7 @@ jobs:
             ECR_REGISTRY=${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com
             IMAGE_TAG=${{ github.sha }}
             sed -i "s|image:.*chatterbox-backend:.*|image: $ECR_REGISTRY/chatterbox-backend:$IMAGE_TAG|g" docker-compose.yml
-            docker pull $ECR_REGISTRY/chatterbox:backend:$IMAGE_TAG
+            docker pull $ECR_REGISTRY/chatterbox-backend:$IMAGE_TAG
             docker-compose down
             docker-compose up -d --remove-orphans
             docker images $ECR_REGISTRY/chatterbox-backend --format "{{.ID}} {{.CreatedAt}}" | sort -rk 2 | awk 'NR>3{print $1}' | xargs -r docker rmi || true
