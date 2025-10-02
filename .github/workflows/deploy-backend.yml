@@ -46,7 +46,7 @@ jobs:
       - name: Build and Push Docker image
         run: |
           ECR_REGISTRY=${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com
-          IMAGE_TAG =  ${{ github.sha }}
+          IMAGE_TAG=${{ github.sha }}
           docker build --no-cache -t $ECR_REGISTRY/chatterbox-backend:$IMAGE_TAG \
                                   -t $ECR_REGISTRY/chatterbox-backend:latest \
                                   ./backend
