@@ -23,6 +23,12 @@ export interface Chat {
     members: string[];
 }
 
+export interface CreateChat {
+    name: string;
+    is_group: boolean;
+    user_ids: number[];
+}
+
 export interface User {
     id: number;
     username: string;

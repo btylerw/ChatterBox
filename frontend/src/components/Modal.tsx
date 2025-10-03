@@ -1,18 +1,51 @@
 import { useState } from "react";
 import SearchBar from "./SearchBar";
-import type { User } from "../types";
+import type { User, CreateChat } from "../types";
+import { createChat } from "../functions/fetchFunctions";
 
-export default function Modal({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
-    const [selectedUser, setSelectedUser] = useState<User | null>(null);
+export default function Modal({ isOpen, onClose, thisUser }: { isOpen: boolean; onClose: () => void, thisUser: User | null }) {
+    // Defaults to the current user. Should investigate making it so that user cannot remove themselves from list
+    const [selectedUsers, setSelectedUsers] = useState<User[] | []>(thisUser ? [thisUser] : []);
     const [chatName, setChatName] = useState<string>("");
 
-    // Update later to save chat to DB
     const handleSubmit = () => {
+        // We need a chat name and at least 2 members to proceed
+        if (!chatName) return;
+        if (selectedUsers.length < 2) return;
+
+        let is_group = false;
+        if (selectedUsers.length > 2) {
+            is_group = true;
+        }
+
+        const userIds = selectedUsers.map(user => user.id);
+        const chatInfo: CreateChat = {
+            name: chatName,
+            is_group: is_group,
+            user_ids: userIds,
+        }
+
+        createChat(chatInfo);
+
+        // Reset everything and close modal
         if (chatName.trim()) {
-            console.log("Selected user: ", selectedUser);
             setChatName('');
+            setSelectedUsers([]);
             onClose();
         }
+    }
+
+    // Add user to list
+    const handleUserSelection = (user: User) => {
+        console.log("Selected user: ", user);
+        setSelectedUsers(prev => [...prev, user]);
+    }
+
+    // Remove user from list
+    const handleRemoveUser = (user: User) => {
+        setSelectedUsers(prev => (
+            prev.filter(validUser => validUser.id !== user.id)
+        ));
     }
 
     if (!isOpen) return null;
@@ -34,7 +67,10 @@ export default function Modal({ isOpen, onClose }: { isOpen: boolean; onClose: (
                         className="w-full bg-gray-700 text-white px-4 py-2 rounded mb-4 focus:outline-none focus:ring-2 focus:ring-blue-500"
                         autoFocus
                     />
-                    <SearchBar onUserSelect={setSelectedUser}/>
+                    {selectedUsers.map(user => (
+                        <div key={user.id} onClick={() => handleRemoveUser(user)}>{user.username}</div>
+                    ))}
+                    <SearchBar onUserSelect={handleUserSelection}/>
                     
                     <div className="flex flex-1 gap-2 justify-center items-center">
                         <button

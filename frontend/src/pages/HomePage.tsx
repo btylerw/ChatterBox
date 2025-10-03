@@ -3,7 +3,7 @@ import { useUser } from "../contexts/UserContext";
 import { useNavigate } from "react-router-dom";
 import Modal from "../components/Modal";
 import { type ChatPayload, type ChatMessage, type Chat, type User, type UserStatusMessage } from "../types";
-import { getUsersById } from "../functions/getUsersById";
+import { getUsersById } from "../functions/fetchFunctions";
 
 export default function HomePage() {
     const { user, chats, logout } = useUser();
@@ -155,26 +155,7 @@ export default function HomePage() {
         setChatId(chat.id);
         setChatName(chat.name);
     }
-    /*
-    const handleCreateChat = async () => {
-        const chatName = "TestChat" + Date.now();
-        const data = { name: chatName, is_group: false, user_ids: [user?.id, chatUserId] }
-        console.log(chatName);
-        try {
-            const response = await axios.post(`${SERVER_URL}/chat/create-chat`,
-                data,
-                {
-                    headers: {
-                        "Content-Type": "application/json",
-                    }
-                },
-            );
-            console.log(response.data);
-        } catch(err) {
-            console.error(err);
-        }
-    }
-    */
+
     useEffect(() => {
         if (!user) {
             navigate("/");
@@ -255,6 +236,7 @@ export default function HomePage() {
             <Modal
                 isOpen={isModalOpen}
                 onClose={() => setIsModalOpen(false)}
+                thisUser={user}
             />
         </div>
 
