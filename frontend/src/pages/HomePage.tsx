@@ -2,7 +2,8 @@ import { useState, useEffect, useRef } from "react";
 import { useUser } from "../contexts/UserContext";
 import { useNavigate } from "react-router-dom";
 import Modal from "../components/Modal";
-import type { MessagePayload, ChatMessage, Chat } from "../types";
+import { type MessagePayload, type ChatMessage, type Chat, type User } from "../types";
+import { getUsersById } from "../functions/getUsersById";
 
 export default function HomePage() {
     const { user, chats, logout } = useUser();
@@ -11,6 +12,7 @@ export default function HomePage() {
     // UPDATE TYPES HERE LATER
     const [chatId, setChatId] = useState<number | null | string>(null);
     const [chatName, setChatName] = useState<string>("No Chat Selected");
+    const [chatMembers, setChatMembers] = useState<User[] | null>(null);
     const [showChannels, setShowChannels] = useState<boolean>(false);
     const navigate = useNavigate();
     const webSocketRef = useRef<WebSocket | null>(null);
@@ -20,15 +22,24 @@ export default function HomePage() {
     const WEBSOCKET_URL = import.meta.env.VITE_WEBSOCKET_URL;
     
     useEffect(() => {
+        const getMembers = async () => {
+            const userIds = chats?.[0].members ?? [];
+            const members = await getUsersById(userIds);
+            setChatMembers(members);
+        }
+
         if (chats?.[0]) {
+            getMembers();
             setChatId(chats?.[0].id);
             setChatName(chats?.[0].name);
         }
+
     }, [chats]);
     
     useEffect(() => {
         if (!chatId) return;
 
+        console.log(chatMembers)
         let socket: WebSocket | null = null;
         let isMounted = true;
 
@@ -64,6 +75,13 @@ export default function HomePage() {
 
             socket.onclose = (event) => {
                 console.log(`WebSocket connection closed for chat ${chatId}`, event.code, event.reason);
+                const data = {
+                    id: user?.id ?? 0,
+                    type: "disconnect",
+                    username: user?.username ?? "Anonymous",
+                    content: "disconnected"
+                }
+                socket?.send(JSON.stringify(data));
             };
 
             socket.onerror = (err) => {
@@ -107,8 +125,15 @@ export default function HomePage() {
         setMessageToSend('');
     }
 
-    const handleLogOut = () => {
+    const handleLogOut = async () => {
         if (webSocketRef.current) {
+            const data = {
+                id: user?.id ?? 0,
+                type: "disconnect",
+                username: user?.username ?? "Anonymous",
+                content: "disconnected"
+            }
+            sendWebMessage(JSON.stringify(data));
             webSocketRef.current.close();
         }
 		logout();
@@ -117,6 +142,13 @@ export default function HomePage() {
 
     const handleChatChange = async (chat: Chat) => {
         if (webSocketRef.current) {
+            const data = {
+                id: user?.id ?? 0,
+                type: "disconnect",
+                username: user?.username ?? "Anonymous",
+                content: "disconnected"
+            }
+            sendWebMessage(JSON.stringify(data));
             webSocketRef.current.close();
         }
         setChatId(chat.id);
@@ -180,7 +212,7 @@ export default function HomePage() {
                     {messages.map(msg => (
                         <div key={msg.id} className="flex items-start space-x-3">
                             <div className="w-9 h-9 bg-indigo-500 rounded-full flex items-center justify-center text-sm">{msg.user?.[0]}</div>
-                            <div className="flex-1">
+                            <div className="flex-1 text-left">
                                 <span className="font-bold">{msg.user}</span>
                                 <p className="text-gray-200">{msg.content}</p>
                             </div>
@@ -204,10 +236,12 @@ export default function HomePage() {
             <div className="hidden xl:flex w-60 bg-gray-850 border-l border-gray-700 flex-col p-4">
                 <h2 className="text-sm font-bold text-gray-400 mb-2">Online</h2>
                 <div className="space-y-2">
-                    <div className="flex items-center space-x-2">
-                        <div className="w-8 h-8 rounded-full bg-green-500"></div>
-                        <span>Bot</span>
-                    </div>
+                    {chatMembers?.map(member => (
+                        <div key={member.id} className="flex items-center space-x-2">
+                            <div className="w-8 h-8 rounded-full bg-green-500"></div>
+                            <span>{member.username}</span>
+                        </div>
+                    ))}
                 </div>
             </div>
 

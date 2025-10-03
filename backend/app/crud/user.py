@@ -28,3 +28,10 @@ def search_users(db: Session, query: str, limit: int = 20) -> List[User]:
             (User.username.ilike(f"%{query}%"))
         ).limit(limit).all()
     )
+
+def get_users_by_id(db: Session, user_ids: List[int]) -> List[User]:
+    return(
+        db.query(User)
+        .where(User.id.in_(user_ids))
+    )
+    

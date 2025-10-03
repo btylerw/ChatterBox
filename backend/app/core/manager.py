@@ -42,6 +42,7 @@ class ConnectionManager:
         print(f"Client connected to chat {chat_id}. Total connections: {len(self.active_connections[chat_id])}")
     
     def disconnect(self, websocket: WebSocket, chat_id: str):
+        print("Client disconnecting: ", websocket)
         if chat_id in self.active_connections:
             try:
                 self.active_connections[chat_id].remove(websocket)
