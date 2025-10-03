@@ -2,14 +2,13 @@ import { useState, useEffect, useRef } from "react";
 import { useUser } from "../contexts/UserContext";
 import { useNavigate } from "react-router-dom";
 import Modal from "../components/Modal";
-import { type MessagePayload, type ChatMessage, type Chat, type User } from "../types";
+import { type ChatPayload, type ChatMessage, type Chat, type User, type UserStatusMessage } from "../types";
 import { getUsersById } from "../functions/getUsersById";
 
 export default function HomePage() {
     const { user, chats, logout } = useUser();
     // UPDATE STATE ACCORDINGLY. MESSAGES SHOULD BE BOUND TO THEIR SPECIFIC CHATROOM
     const [messages, setMessages] = useState<ChatMessage[]>([]);
-    // UPDATE TYPES HERE LATER
     const [chatId, setChatId] = useState<number | null | string>(null);
     const [chatName, setChatName] = useState<string>("No Chat Selected");
     const [chatMembers, setChatMembers] = useState<User[] | null>(null);
@@ -22,18 +21,10 @@ export default function HomePage() {
     const WEBSOCKET_URL = import.meta.env.VITE_WEBSOCKET_URL;
     
     useEffect(() => {
-        const getMembers = async () => {
-            const userIds = chats?.[0].members ?? [];
-            const members = await getUsersById(userIds);
-            setChatMembers(members);
-        }
-
         if (chats?.[0]) {
-            getMembers();
             setChatId(chats?.[0].id);
             setChatName(chats?.[0].name);
         }
-
     }, [chats]);
     
     useEffect(() => {
@@ -46,7 +37,7 @@ export default function HomePage() {
         const connectNewSocket = () => {
             if (!isMounted) return;
 
-            socket = new WebSocket(`${WEBSOCKET_URL}/chat/ws/${chatId}`);
+            socket = new WebSocket(`${WEBSOCKET_URL}/chat/ws/${chatId}/${user?.id}`);
             webSocketRef.current = socket;
 
             socket.onopen = () => {
@@ -60,28 +51,44 @@ export default function HomePage() {
                 socket?.send(JSON.stringify(data));
             };
 
-            socket.onmessage = (e) => {
+            socket.onmessage = async (e) => {
+                type MessagePayload = ChatPayload | UserStatusMessage;
                 const parsed: MessagePayload = JSON.parse(e.data);
-                const { username, content, type } = parsed;
-                console.log("Received message:", parsed);
-                
-                if (username === user?.username && type === "connect") return;
-                
-                setMessages((prevMessages) => [
-                    ...prevMessages,
-                    { id: Date.now(), user: username, content: content },
-                ]);
+                if (parsed.type === "connected_users") {
+                    const members = await getUsersById(parsed.user_ids);
+                    if (members) {
+                        setChatMembers(members);
+                    }
+                } else if (parsed.type === "user_joined") {
+                    const member = await getUsersById(parsed.user_ids)
+                    if (member && member.length > 0) {
+                        setChatMembers(prev => {
+                            if (!prev) return member;
+                            return [...prev, ...member]
+                        })
+                    }
+                } else if (parsed.type === "user_left") {
+                    setChatMembers(prev => {
+                        if (!prev) return prev;
+                        const filtered = prev.filter(member => {
+                            const shouldKeep = !parsed.user_ids.includes(member.id);
+                            return shouldKeep;
+                        })
+                       return filtered;
+                    });
+                } else if (parsed.type === "chat_message") {
+                    const { username, content } = parsed;
+                    console.log("Received message:", parsed);
+                    
+                    setMessages((prevMessages) => [
+                        ...prevMessages,
+                        { id: Date.now(), user: username, content: content },
+                    ]);
+                }
             };
 
             socket.onclose = (event) => {
                 console.log(`WebSocket connection closed for chat ${chatId}`, event.code, event.reason);
-                const data = {
-                    id: user?.id ?? 0,
-                    type: "disconnect",
-                    username: user?.username ?? "Anonymous",
-                    content: "disconnected"
-                }
-                socket?.send(JSON.stringify(data));
             };
 
             socket.onerror = (err) => {
@@ -115,9 +122,9 @@ export default function HomePage() {
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        const data: MessagePayload =  {
+        const data: ChatPayload =  {
             id: user?.id ?? 0,
-            type: "message",
+            type: "chat_message",
             username: user?.username ?? "Anonymous",
             content: messageToSend,
         }
@@ -127,13 +134,6 @@ export default function HomePage() {
 
     const handleLogOut = async () => {
         if (webSocketRef.current) {
-            const data = {
-                id: user?.id ?? 0,
-                type: "disconnect",
-                username: user?.username ?? "Anonymous",
-                content: "disconnected"
-            }
-            sendWebMessage(JSON.stringify(data));
             webSocketRef.current.close();
         }
 		logout();
@@ -151,6 +151,7 @@ export default function HomePage() {
             sendWebMessage(JSON.stringify(data));
             webSocketRef.current.close();
         }
+        setMessages([]);
         setChatId(chat.id);
         setChatName(chat.name);
     }

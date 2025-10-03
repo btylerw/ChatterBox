@@ -1,12 +1,13 @@
 import asyncio
 import os
+import json
 from typing import List, Dict
 from fastapi import WebSocket
 import redis.asyncio as redis
 
 class ConnectionManager:
     def __init__(self):
-        self.active_connections: dict[str, list[WebSocket]] = {}
+        self.active_connections: dict[str, list[tuple[int, WebSocket]]] = {}
         self.redis_client = None
         self.pubsub = None
         self.subscribed_chats = set()
@@ -22,15 +23,24 @@ class ConnectionManager:
         self.pubsub = self.redis_client.pubsub()
         print("Redis connection initialized")
     
-    async def connect(self, websocket: WebSocket, chat_id: str):
+    async def connect(self, websocket: WebSocket, chat_id: str, user_id: int):
         if self.redis_client is None:
             await self.initialize_redis()
 
         await websocket.accept()
 
-        if chat_id not in self.active_connections:
+        connected_user_ids = []
+        if chat_id in self.active_connections:
+            connected_user_ids = [uid for uid, _ in self.active_connections[chat_id]]
+        else:
             self.active_connections[chat_id] = []
-        self.active_connections[chat_id].append(websocket)
+        
+        self.active_connections[chat_id].append((user_id, websocket))
+
+        await websocket.send_json({
+            "type": "connected_users",
+            "user_ids": connected_user_ids
+        })
 
         if chat_id not in self.subscribed_chats:
             await self.pubsub.subscribe(f"chat:{chat_id}")
@@ -38,14 +48,16 @@ class ConnectionManager:
         
         if self.listener_task is None or self.listener_task.done():
             self.listener_task = asyncio.create_task(self._redis_listener())
+        
+        await self.broadcast_user_event(chat_id, user_id, "user_joined")
                 
         print(f"Client connected to chat {chat_id}. Total connections: {len(self.active_connections[chat_id])}")
     
-    def disconnect(self, websocket: WebSocket, chat_id: str):
+    def disconnect(self, websocket: WebSocket, chat_id: str, user_id: int):
         print("Client disconnecting: ", websocket)
         if chat_id in self.active_connections:
             try:
-                self.active_connections[chat_id].remove(websocket)
+                self.active_connections[chat_id].remove((user_id, websocket))
                 print(f"Client disconnected from chat {chat_id}. Remaining: {len(self.active_connections[chat_id])}")
             except ValueError:
                 print(f"WebSocket not found in chat {chat_id} connections")
@@ -53,6 +65,13 @@ class ConnectionManager:
                 del self.active_connections[chat_id]
                 print(f"Chat {chat_id} has no more connections, removed from manager.")
     
+    async def broadcast_user_event(self, chat_id: str, user_id: int, event_type: str):
+        message = json.dumps({
+            "type": event_type,
+            "user_ids": [user_id]
+        })
+        await self.broadcast(message, chat_id)
+
     async def broadcast(self, message: str, chat_id: str):
         if self.initialize_redis is None:
             await self.initialize_redis()
@@ -87,12 +106,12 @@ class ConnectionManager:
             return
     
         dead_connections = []
-        for connection in self.active_connections[chat_id]:
+        for user_id, connection in self.active_connections[chat_id]:
             try:
                 await connection.send_text(message)
             except Exception as e:
                 print(f"Error sending to connection: {e}")
-                dead_connections.append(connection)
+                dead_connections.append((user_id, connection))
         
         for dead_conn in dead_connections:
             self.disconnect(dead_conn, chat_id)

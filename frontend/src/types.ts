@@ -1,8 +1,13 @@
-export interface MessagePayload {
+export interface ChatPayload {
     id: number,
-    type: string,
+    type: 'chat_message',
     username: string,
     content: string,
+}
+
+export interface UserStatusMessage {
+    type: 'connected_users' | 'user_joined' | 'user_left',
+    user_ids: number[]
 }
 
 export interface ChatMessage {

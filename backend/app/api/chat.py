@@ -21,17 +21,19 @@ class MessageRequest(BaseModel):
     recipient: str
     content: str
 
-@router.websocket("/ws/{chat_id}")
-async def websocket_endpoint(websocket: WebSocket, chat_id: str):
-    await manager.connect(websocket, chat_id)
+@router.websocket("/ws/{chat_id}/{user_id}")
+async def websocket_endpoint(websocket: WebSocket, chat_id: str, user_id: int):
+    await manager.connect(websocket, chat_id, user_id)
     try:
         while True:
             data = await websocket.receive_text()
             await manager.broadcast(data, chat_id)
     except WebSocketDisconnect:
-        manager.disconnect(websocket, chat_id)
+        manager.disconnect(websocket, chat_id, user_id)
+        await manager.broadcast_user_event(chat_id, user_id, "user_left")
     except Exception as e:
-        manager.disconnect(websocket, chat_id)
+        manager.disconnect(websocket, chat_id, user_id)
+        await manager.broadcast_user_event(chat_id, user_id, "user_left")
 
 @router.post("/create-chat", response_model=ChatResponse)
 async def create(chat_in: ChatCreate, db: Session = Depends(get_db)):

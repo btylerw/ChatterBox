@@ -1,7 +1,7 @@
 import axios from "axios";
 import type { User } from "../types";
 
-export async function getUsersById(user_ids: string[]): Promise<User[]> {
+export async function getUsersById(user_ids: number[]): Promise<User[]> {
     const SERVER_URL = import.meta.env.VITE_SERVER_URL;
     try {
         const response = await axios.post(
