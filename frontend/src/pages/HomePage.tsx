@@ -1,8 +1,8 @@
 import { useState, useEffect, useRef } from "react";
 import { useUser } from "../contexts/UserContext";
 import { useNavigate } from "react-router-dom";
-import SearchBar from "../components/SearchBar";
-import type { MessagePayload, ChatMessage, Chat, User } from "../types";
+import Modal from "../components/Modal";
+import type { MessagePayload, ChatMessage, Chat } from "../types";
 
 export default function HomePage() {
     const { user, chats, logout } = useUser();
@@ -15,12 +15,11 @@ export default function HomePage() {
     const navigate = useNavigate();
     const webSocketRef = useRef<WebSocket | null>(null);
     const [messageToSend, setMessageToSend] = useState<string>("");
-    const [selectedUser, setSelectedUser] = useState<User | null>(null);
+    const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
     
     const WEBSOCKET_URL = import.meta.env.VITE_WEBSOCKET_URL;
     
     useEffect(() => {
-        console.log(selectedUser);
         if (chats?.[0]) {
             setChatId(chats?.[0].id);
             setChatName(chats?.[0].name);
@@ -163,8 +162,8 @@ export default function HomePage() {
                     {chats?.map(chat => (
                         <div key={chat?.id} onClick={() => handleChatChange(chat)} className="hover:bg-gray-700 rounded px-2 py-1 cursor-pointer">{chat?.name}</div>
                     ))}
-                    <SearchBar onUserSelect={setSelectedUser}/>
                 </div>
+                <div className="h-12 bg-blue-700 rounded-md flex items-center justify-center cursor-pointer m-3" onClick={() => setIsModalOpen(true)}>Create Chat</div>
                 <div className="h-12 bg-red-700 rounded-md flex items-center justify-center cursor-pointer m-3" onClick={handleLogOut}>Log Out</div>
             </div>
 
@@ -218,6 +217,11 @@ export default function HomePage() {
                 <button className="w-10 h-10 bg-gray-700 rounded-full flex items-center justify-center">+</button>
             </div>
 
+            <Modal
+                isOpen={isModalOpen}
+                onClose={() => setIsModalOpen(false)}
+            />
         </div>
+
     );
 }
