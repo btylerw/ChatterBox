@@ -4,6 +4,7 @@ from app.db.session import SessionLocal
 from app.models import User
 from app.schemas.user import UserCreate, UserResponse, UserLogin
 from app.crud.user import create_user
+from app.crud.chat import add_to_chat
 from app.core.security import verify_password
 
 router = APIRouter(prefix="/auth", tags=["auth"])
@@ -18,6 +19,8 @@ def get_db():
 @router.post("/register", response_model=UserResponse)
 def register(user_in: UserCreate, db: Session = Depends(get_db)):
     user = create_user(db, user_in)
+    add_to_chat(user.id, 7, db)
+    add_to_chat(user.id, 8, db)
     return user
 
 @router.post("/login")

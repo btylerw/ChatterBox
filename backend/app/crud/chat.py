@@ -32,3 +32,16 @@ def get_user_chats(user_id: int, db: Session) -> List[Chats]:
         .filter(ChatMembership.user_id == user_id)
         .all()
     )
+
+def add_to_chat(user_id: int, chat_id: int, db: Session) -> str:
+    membership = ChatMembership(user_id=user_id, chat_id=chat_id)
+    db.add(membership)
+    try:
+        db.commit()
+        return "Successfully added to chat!"
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Error adding user to chat"
+        )
