@@ -1,8 +1,11 @@
 import { useState } from "react";
 import axios from "axios";
+import { useUser } from "../contexts/UserContext";
+import { useNavigate } from "react-router-dom";
 
 export default function CreateAccount() {
     const SERVER_URL = import.meta.env.VITE_SERVER_URL;
+    const { login } = useUser();
     const [formData, setFormData] = useState({
         username: "",
         email: "",
@@ -11,6 +14,7 @@ export default function CreateAccount() {
     const [confirmPassword, setConfirmPassword] = useState<string>("");
     const [error, setError] = useState<string>("");
     const [showError, setShowError] = useState<boolean>(false);
+    const navigate = useNavigate();
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { name, value } = e.target;
@@ -46,6 +50,16 @@ export default function CreateAccount() {
             if (showError) {
                 setShowError(false);
                 setError("");
+            }
+            const loginData = {
+                username: formData.username,
+                password: formData.password,
+            };
+            const loginResponse = await login(loginData);
+            if (typeof loginResponse === "string") {
+                return;
+            } else {
+                navigate("/home");
             }
             console.log(response.data);
         } catch (err: unknown) {
