@@ -64,7 +64,9 @@ export default function HomePage() {
                     if (member && member.length > 0) {
                         setChatMembers(prev => {
                             if (!prev) return member;
-                            return [...prev, ...member]
+                            const existingIds = new Set(prev.map(m => m.id));
+                            const newMembers = member.filter(m => !existingIds.has(m.id));
+                            return newMembers.length > 0 ? [...prev, ...newMembers] : prev;
                         })
                     }
                 } else if (parsed.type === "user_left") {
