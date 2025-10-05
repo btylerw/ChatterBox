@@ -3,15 +3,15 @@ import SearchBar from "./SearchBar";
 import type { User, CreateChat, UpdateChat } from "../types";
 import { createChat, addUsersToChat } from "../functions/fetchFunctions";
 
-export default function Modal({ title, type, chat_id, isOpen, onClose, thisUser }: 
-    { title: string, type: "update" | "create", chat_id: number | string | null, isOpen: boolean; onClose: () => void, thisUser: User | null }) {
+export default function Modal({ title, type, chat_id, isOpen, onClose, thisUser, resetChats }: 
+    { title: string, type: "update" | "create", chat_id: number | string | null, isOpen: boolean; onClose: () => void, thisUser: User | null, resetChats: () => void }) {
     // Defaults to the current user. Should investigate making it so that user cannot remove themselves from list
     const [selectedUsers, setSelectedUsers] = useState<User[] | []>(
         type === 'create' && thisUser ? [thisUser] : []
     );
     const [chatName, setChatName] = useState<string>("");
 
-    const handleSubmit = () => {
+    const handleSubmit = async () => {
         // We need a chat name and at least 2 members to proceed
         if (type === 'create') {
             if (!chatName) return;
@@ -33,15 +33,17 @@ export default function Modal({ title, type, chat_id, isOpen, onClose, thisUser 
                 user_ids: userIds,
             }
     
-            createChat(chatInfo);
+            await createChat(chatInfo);
         } else if (type === "update") {
             const chatInfo: UpdateChat = {
                 id: chat_id,
                 members: userIds,
             }
 
-            addUsersToChat(chatInfo);
+            await addUsersToChat(chatInfo);
         }
+
+        await resetChats();
 
         // Reset everything and close modal
         if (chatName.trim()) {

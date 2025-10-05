@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, type ReactNode } from "react";
 import type { User, UserCredentials, Chat, UserContextType } from "../types";
+import { getChats } from "../functions/fetchFunctions";
 import axios from "axios";
 
 const UserContext = createContext<UserContextType | undefined>(undefined);
@@ -20,8 +21,8 @@ export function UserProvider({ children }: { children: ReactNode }) {
                 }
             );
             if (response) {
-                const chatData = await axios.get(`${SERVER_URL}/users/chats/${response?.data?.id}`);
-                setChats(chatData.data);
+                const chatData = await getChats(response?.data?.id);
+                setChats(chatData);
             }
             console.log(response.data);
             setUser(response.data);
@@ -35,10 +36,15 @@ export function UserProvider({ children }: { children: ReactNode }) {
         }
     };
 
+    const resetChats = async () => {
+        const chatData = await getChats(user?.id);
+        setChats(chatData);
+    }
+
     const logout = () => setUser(null);
 
     return (
-        <UserContext.Provider value={{ user, login, logout, chats }}>
+        <UserContext.Provider value={{ user, login, logout, chats, resetChats }}>
             {children}
         </UserContext.Provider>
     );

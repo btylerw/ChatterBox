@@ -6,7 +6,7 @@ import { type ChatPayload, type ChatMessage, type Chat, type User, type UserStat
 import { getUsersById } from "../functions/fetchFunctions";
 
 export default function HomePage() {
-    const { user, chats, logout } = useUser();
+    const { user, chats, logout, resetChats } = useUser();
     // UPDATE STATE ACCORDINGLY. MESSAGES SHOULD BE BOUND TO THEIR SPECIFIC CHATROOM
     const [messages, setMessages] = useState<ChatMessage[]>([]);
     const [chatId, setChatId] = useState<number | null | string>(null);
@@ -248,6 +248,7 @@ export default function HomePage() {
                 isOpen={isCreateModalOpen}
                 onClose={() => setIsCreateModalOpen(false)}
                 thisUser={user}
+                resetChats={resetChats}
             />
             <Modal
                 title={"Add Users To Chat"}
@@ -256,6 +257,7 @@ export default function HomePage() {
                 isOpen={isUpdateModalOpen}
                 onClose={() => setIsUpdateModalOpen(false)}
                 thisUser={user}
+                resetChats={resetChats}
             />
         </div>
 

@@ -49,4 +49,5 @@ export interface UserContextType {
     login: (user: UserCredentials) => Promise<User | void | string>;
     logout: () => void;
     chats: Chat[] | null;
+    resetChats: () => void;
 }
