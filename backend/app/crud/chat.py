@@ -33,9 +33,12 @@ def get_user_chats(user_id: int, db: Session) -> List[Chats]:
         .all()
     )
 
-def add_to_chat(user_id: int, chat_id: int, db: Session) -> str:
-    membership = ChatMembership(user_id=user_id, chat_id=chat_id)
-    db.add(membership)
+def add_to_chat(user_ids: List[int], chat_id: int, db: Session) -> str:
+    memberships = [
+        ChatMembership(user_id=user_id, chat_id=chat_id)
+        for user_id in user_ids
+    ]
+    db.add_all(memberships)
     try:
         db.commit()
         return "Successfully added to chat!"

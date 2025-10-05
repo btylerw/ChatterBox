@@ -16,7 +16,8 @@ export default function HomePage() {
     const navigate = useNavigate();
     const webSocketRef = useRef<WebSocket | null>(null);
     const [messageToSend, setMessageToSend] = useState<string>("");
-    const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
+    const [isCreateModalOpen, setIsCreateModalOpen] = useState<boolean>(false);
+    const [isUpdateModalOpen, setIsUpdateModalOpen] = useState<boolean>(false);
     
     const WEBSOCKET_URL = import.meta.env.VITE_WEBSOCKET_URL;
     
@@ -179,7 +180,7 @@ export default function HomePage() {
                         <div key={chat?.id} onClick={() => handleChatChange(chat)} className="hover:bg-gray-700 rounded px-2 py-1 cursor-pointer">{chat?.name}</div>
                     ))}
                 </div>
-                <div className="h-12 bg-blue-700 rounded-md flex items-center justify-center cursor-pointer m-3" onClick={() => setIsModalOpen(true)}>Create Chat</div>
+                <div className="h-12 bg-blue-700 rounded-md flex items-center justify-center cursor-pointer m-3" onClick={() => setIsCreateModalOpen(true)}>Create Chat</div>
                 <div className="h-12 bg-red-700 rounded-md flex items-center justify-center cursor-pointer m-3" onClick={handleLogOut}>Log Out</div>
             </div>
 
@@ -188,7 +189,12 @@ export default function HomePage() {
                 {/* Header */}
                 <div className="h-14 bg-gray-800 border-b border-gray-700 flex items-center px-4 justify-between">
                     <span className="font-bold text-lg">{chatName}</span>
-                    <button className="md:hidden text-gray-400" onClick={() => setShowChannels(true)}>☰</button>
+                    <div className="flex items-center gap-2">
+                        <button className="hidden md:block px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white cursor-pointer rounded text-sm" onClick={() =>  setIsUpdateModalOpen(true)}>
+                            + Add Users
+                        </button>
+                        <button className="md:hidden text-gray-400" onClick={() => setShowChannels(true)}>☰</button>
+                    </div>
                 </div>
 
                 {/* Messages */}
@@ -236,8 +242,19 @@ export default function HomePage() {
             </div>
 
             <Modal
-                isOpen={isModalOpen}
-                onClose={() => setIsModalOpen(false)}
+                title={"Create New Chat"}
+                type={"create"}
+                chat_id={null}
+                isOpen={isCreateModalOpen}
+                onClose={() => setIsCreateModalOpen(false)}
+                thisUser={user}
+            />
+            <Modal
+                title={"Add Users To Chat"}
+                type={"update"}
+                chat_id={chatId}
+                isOpen={isUpdateModalOpen}
+                onClose={() => setIsUpdateModalOpen(false)}
                 thisUser={user}
             />
         </div>

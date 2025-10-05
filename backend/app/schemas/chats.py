@@ -6,6 +6,10 @@ class ChatCreate(BaseModel):
     is_group: bool
     user_ids: list
 
+class UpdateChat(BaseModel):
+    id: int
+    members: List[int]
+
 class ChatResponse(BaseModel):
     id:  int
     name: str

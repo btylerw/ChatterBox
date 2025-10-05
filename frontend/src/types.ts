@@ -29,6 +29,11 @@ export interface CreateChat {
     user_ids: number[];
 }
 
+export interface UpdateChat {
+    id: number | string | null;
+    members: number[];
+}
+
 export interface User {
     id: number;
     username: string;

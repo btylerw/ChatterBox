@@ -2,8 +2,8 @@ from fastapi import APIRouter, WebSocket, WebSocketDisconnect, Depends
 from sqlalchemy.orm import Session
 from app.db.session import SessionLocal
 from pydantic import BaseModel
-from app.crud.chat import create_chat
-from app.schemas.chats import ChatCreate, ChatResponse
+from app.crud.chat import create_chat, add_to_chat
+from app.schemas.chats import ChatCreate, ChatResponse, UpdateChat
 from app.core.manager import manager
 
 
@@ -45,3 +45,12 @@ async def create(chat_in: ChatCreate, db: Session = Depends(get_db)):
         is_group=chat.is_group,
         members=member_ids
     )
+
+@router.post("/update-chat")
+async def update(chat_in: UpdateChat, db: Session = Depends(get_db)):
+    try:
+        add_to_chat(chat_in.members, chat_in.id, db)
+        return "Successfully added members to chat"
+    except Exception as e:
+        print(f"Error updating chat: {e}")
+        return f"Error adding members to chat: {e}"

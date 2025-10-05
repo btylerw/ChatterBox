@@ -19,8 +19,8 @@ def get_db():
 @router.post("/register", response_model=UserResponse)
 def register(user_in: UserCreate, db: Session = Depends(get_db)):
     user = create_user(db, user_in)
-    add_to_chat(user.id, 7, db)
-    add_to_chat(user.id, 8, db)
+    add_to_chat([user.id], 7, db)
+    add_to_chat([user.id], 8, db)
     return user
 
 @router.post("/login")
