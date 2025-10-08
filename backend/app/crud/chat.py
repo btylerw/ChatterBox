@@ -5,6 +5,7 @@ from app.models import Chats, ChatMembership
 from app.schemas.chats import ChatCreate
 from typing import List
 
+# Writes a new chat in database
 def create_chat(db: Session, chat_in: ChatCreate) -> Chats:
     db_chat = Chats(name=chat_in.name, is_group=chat_in.is_group)
     db.add(db_chat)
@@ -24,7 +25,8 @@ def create_chat(db: Session, chat_in: ChatCreate) -> Chats:
             status_code=status.HTTP_409_CONFLICT,
             detail="Error creating new chat"
         )
-    
+
+# Retrieves chats from database
 def get_user_chats(user_id: int, db: Session) -> List[Chats]:
     return (
         db.query(Chats)
@@ -33,6 +35,7 @@ def get_user_chats(user_id: int, db: Session) -> List[Chats]:
         .all()
     )
 
+# Updates chats in database
 def add_to_chat(user_ids: List[int], chat_id: int, db: Session) -> str:
     memberships = [
         ChatMembership(user_id=user_id, chat_id=chat_id)

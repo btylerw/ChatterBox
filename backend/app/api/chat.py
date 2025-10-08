@@ -21,6 +21,7 @@ class MessageRequest(BaseModel):
     recipient: str
     content: str
 
+# Handles connections and listens for messages
 @router.websocket("/ws/{chat_id}/{user_id}")
 async def websocket_endpoint(websocket: WebSocket, chat_id: str, user_id: int):
     await manager.connect(websocket, chat_id, user_id)
@@ -35,6 +36,7 @@ async def websocket_endpoint(websocket: WebSocket, chat_id: str, user_id: int):
         manager.disconnect(websocket, chat_id, user_id)
         await manager.broadcast_user_event(chat_id, user_id, "user_left")
 
+# Creates a new chat
 @router.post("/create-chat", response_model=ChatResponse)
 async def create(chat_in: ChatCreate, db: Session = Depends(get_db)):
     chat = create_chat(db, chat_in)
@@ -46,6 +48,7 @@ async def create(chat_in: ChatCreate, db: Session = Depends(get_db)):
         members=member_ids
     )
 
+# Adds users to existing chat
 @router.post("/update-chat")
 async def update(chat_in: UpdateChat, db: Session = Depends(get_db)):
     try:

@@ -39,6 +39,7 @@ export default function CreateAccount() {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         try {
+            // API call to create new user
             const response = await axios.post(`${SERVER_URL}/auth/register`,
                 formData,
                 {
@@ -51,10 +52,13 @@ export default function CreateAccount() {
                 setShowError(false);
                 setError("");
             }
+            
             const loginData = {
                 username: formData.username,
                 password: formData.password,
             };
+
+            // Automatically logs new user in and redirects to home page if successful
             const loginResponse = await login(loginData);
             if (typeof loginResponse === "string") {
                 return;

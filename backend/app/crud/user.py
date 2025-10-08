@@ -6,6 +6,7 @@ from app.schemas.user import UserCreate
 from app.core.security import hash_password
 from typing import List
 
+# Writes new user in database
 def create_user(db: Session, user_in: UserCreate) -> User:
     hashed_pw = hash_password(user_in.password)
     db_user = User(username=user_in.username, email=user_in.email, hashed_password=hashed_pw)
@@ -21,6 +22,7 @@ def create_user(db: Session, user_in: UserCreate) -> User:
             detail="Username or email already registered."
         )
 
+# Retrieves users from database
 def search_users(db: Session, query: str, limit: int = 20) -> List[User]:
     return (
         db.query(User)
@@ -29,6 +31,7 @@ def search_users(db: Session, query: str, limit: int = 20) -> List[User]:
         ).limit(limit).all()
     )
 
+# Retrieves users from database
 def get_users_by_id(db: Session, user_ids: List[int]) -> List[User]:
     return(
         db.query(User)

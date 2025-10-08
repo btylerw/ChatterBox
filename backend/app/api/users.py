@@ -16,6 +16,7 @@ def get_db():
     finally:
         db.close()
 
+# Returns chat data for user
 @router.get("/chats/{user_id}", response_model=List[ChatResponse])
 async def get_chats(user_id: int, db: Session = Depends(get_db)):
     print(user_id)
@@ -33,10 +34,12 @@ async def get_chats(user_id: int, db: Session = Depends(get_db)):
         )
     return response
 
+# Returns list of all requested user data by username
 @router.get("/search_users/", response_model=List[SearchUsers])
 async def get_users(q: str = Query(..., min_length=2, max_length=50), db: Session = Depends(get_db)):
     return search_users(db, q)
 
+# Returns list of all requested user data by id
 @router.post("/get_users_by_id", response_model=List[SearchUsers])
 async def get_users(user_ids: List[int], db: Session = Depends(get_db)):
     return get_users_by_id(db, user_ids)

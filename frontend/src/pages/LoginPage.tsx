@@ -20,6 +20,7 @@ export default function LoginPage() {
         }));
     };
 
+    // Logs user in and redirects them to home page
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         const response = await login(formData);

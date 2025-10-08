@@ -16,13 +16,17 @@ def get_db():
     finally:
         db.close()
 
+# Creates new users
 @router.post("/register", response_model=UserResponse)
 def register(user_in: UserCreate, db: Session = Depends(get_db)):
     user = create_user(db, user_in)
+    # 7 and 8 are the Chat IDs for the two public chat rooms
+    # Automatically adds new users to public chat rooms
     add_to_chat([user.id], 7, db)
     add_to_chat([user.id], 8, db)
     return user
 
+# Authenticates new user and returns user data
 @router.post("/login")
 def login(user_in: UserLogin, db: Session = Depends(get_db)):
     user = db.query(User).filter(User.username == user_in.username).first()

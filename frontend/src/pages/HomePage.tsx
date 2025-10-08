@@ -21,6 +21,7 @@ export default function HomePage() {
     
     const WEBSOCKET_URL = import.meta.env.VITE_WEBSOCKET_URL;
     
+    // Sets all chat states whenever chats is updated
     useEffect(() => {
         if (chats?.[0]) {
             setChatId(chats?.[0].id);
@@ -31,16 +32,17 @@ export default function HomePage() {
     useEffect(() => {
         if (!chatId) return;
 
-        console.log(chatMembers)
         let socket: WebSocket | null = null;
         let isMounted = true;
 
+        // WebSocket connection logic. Is called whenever user switches chats
         const connectNewSocket = () => {
             if (!isMounted) return;
 
             socket = new WebSocket(`${WEBSOCKET_URL}/chat/ws/${chatId}/${user?.id}`);
             webSocketRef.current = socket;
 
+            // Sends a message to channel that user is connected
             socket.onopen = () => {
                 console.log(`WebSocket connection opened for chat ${chatId}`);
                 const data = {
@@ -52,9 +54,13 @@ export default function HomePage() {
                 socket?.send(JSON.stringify(data));
             };
 
+            // Message handler
             socket.onmessage = async (e) => {
                 type MessagePayload = ChatPayload | UserStatusMessage;
                 const parsed: MessagePayload = JSON.parse(e.data);
+                // Handles differently based on connection type
+                // connected_users, user_joined, user_left will all update the connected users list -> chatMembers
+                // chat_message will display the message and sender in the chat window
                 if (parsed.type === "connected_users") {
                     const members = await getUsersById(parsed.user_ids);
                     if (members) {
@@ -99,6 +105,9 @@ export default function HomePage() {
             };
         };
 
+        // Whenever this effect is triggered, checks if there's an open connection first
+        // If open, closes current connection and waits a bit before creating a new one
+        // If no open connection, opens one
         if (webSocketRef.current && webSocketRef.current.readyState !== WebSocket.CLOSED) {
             webSocketRef.current.close();
             setTimeout(connectNewSocket, 100);
@@ -115,6 +124,7 @@ export default function HomePage() {
         };
     }, [chatId, user?.id, user?.username]);
 
+    // Ensures open connection and sends message
     const sendWebMessage = (data: string) => {
         if (webSocketRef.current && webSocketRef.current.readyState === WebSocket.OPEN) {
             webSocketRef.current.send(data);
@@ -123,6 +133,7 @@ export default function HomePage() {
         }
     }
 
+    // Properly formats message before sending
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         const data: ChatPayload =  {
@@ -135,6 +146,7 @@ export default function HomePage() {
         setMessageToSend('');
     }
 
+    // Close connecion, logout
     const handleLogOut = async () => {
         if (webSocketRef.current) {
             webSocketRef.current.close();
@@ -143,6 +155,7 @@ export default function HomePage() {
 		
     }
 
+    // Sends disconnect message and closes connection
     const handleChatChange = async (chat: Chat) => {
         if (webSocketRef.current) {
             const data = {
@@ -154,12 +167,15 @@ export default function HomePage() {
             sendWebMessage(JSON.stringify(data));
             webSocketRef.current.close();
         }
+        // Reset chat messages
         setMessages([]);
+        // Triggers useEffect to open new websocket
         setChatId(chat.id);
         setChatName(chat.name);
     }
 
     useEffect(() => {
+        // Returns user back to landing page if they're not logged in
         if (!user) {
             navigate("/");
         }

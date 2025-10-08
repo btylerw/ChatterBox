@@ -21,10 +21,10 @@ export function UserProvider({ children }: { children: ReactNode }) {
                 }
             );
             if (response) {
+                // Get all chatrooms user belongs to
                 const chatData = await getChats(response?.data?.id);
                 setChats(chatData);
             }
-            console.log(response.data);
             setUser(response.data);
         } catch (err: unknown) {
             if (axios.isAxiosError(err)) {
@@ -36,11 +36,13 @@ export function UserProvider({ children }: { children: ReactNode }) {
         }
     };
 
+    // Used to update chats whenever a change is made
     const resetChats = async () => {
         const chatData = await getChats(user?.id);
         setChats(chatData);
     }
 
+    // Reset user data
     const logout = () => setUser(null);
 
     return (
