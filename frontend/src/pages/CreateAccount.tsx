@@ -77,7 +77,8 @@ export default function CreateAccount() {
     }
 
     return (
-        <div className="flex justify-center items-center">
+        <div className="flex flex-col gap-4 justify-center items-center">
+			<h1>Create New Account</h1>
             <form className="flex flex-col gap-4 w-80" action="submit" onSubmit={handleSubmit}>
                 <input 
                     type="text"

@@ -20,8 +20,8 @@ export default function HomePage() {
     const [isUpdateModalOpen, setIsUpdateModalOpen] = useState<boolean>(false);
     
     const WEBSOCKET_URL = import.meta.env.VITE_WEBSOCKET_URL;
-    
     // Sets all chat states whenever chats is updated
+	
     useEffect(() => {
         if (chats?.[0]) {
             setChatId(chats?.[0].id);

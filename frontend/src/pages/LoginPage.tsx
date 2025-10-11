@@ -35,7 +35,8 @@ export default function LoginPage() {
     }
 
     return (
-        <div className="flex justify-center items-center">
+        <div className="flex flex-col gap-4 justify-center items-center">
+			<h1>Welcome to ChatterBox!</h1>
             <form className="flex flex-col gap-4 w-80" action="submit" onSubmit={handleSubmit}>
                 <input 
                     type="text"
